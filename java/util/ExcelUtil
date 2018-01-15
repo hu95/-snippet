@@ -1,0 +1,857 @@
+
+
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUpload;
+import org.apache.commons.fileupload.FileUploadBase.SizeLimitExceededException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFDateUtil;
+import org.apache.poi.hssf.usermodel.HSSFFont;
+import org.apache.poi.hssf.usermodel.HSSFFooter;
+import org.apache.poi.hssf.usermodel.HSSFHeader;
+import org.apache.poi.hssf.usermodel.HSSFRichTextString;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.hssf.util.Region;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.tools.zip.ZipEntry;
+import org.apache.tools.zip.ZipOutputStream;
+
+/**
+ * Title: 生成Excel相关工具类
+ * 
+ * Description: 生成Excel相关工具类
+ * 
+ */
+public class ExcelUtil {
+
+	/**
+	 * 工作簿
+	 */
+	private static HSSFWorkbook wb = null;
+
+	/**
+	 * 工作表
+	 */
+	private static HSSFSheet sheet = null;
+
+	/**
+	 * 行
+	 */
+	private static HSSFRow row = null;
+
+	/**
+	 * 单元格
+	 */
+	private static HSSFCell cell = null;
+
+	/**
+	 * 
+	 * @param fontHeightInPoints
+	 *            字体高度
+	 * @param fontName
+	 *            字体名称
+	 * @param boldweight
+	 *            字体加粗
+	 * @param wrapText
+	 *            允许换行
+	 * @param borderTop
+	 *            上边框
+	 * @param borderBottom
+	 *            下边框
+	 * @param borderLeft
+	 *            左边框
+	 * @param borderRight
+	 *            右边框
+	 * @param alignment
+	 *            对齐
+	 * @param verticalAlignment
+	 *            垂直对齐
+	 * @return
+	 */
+	private static HSSFCellStyle generateCellStyle(short fontHeightInPoints,
+			String fontName, short boldweight, boolean wrapText,
+			short borderTop, short borderBottom, short borderLeft,
+			short borderRight, short alignment, short verticalAlignment) {
+		HSSFFont font = wb.createFont();
+
+		font.setCharSet(HSSFFont.DEFAULT_CHARSET);
+		font.setFontHeightInPoints(fontHeightInPoints);
+		font.setFontName(fontName);
+		font.setBoldweight(boldweight); // 字体加粗
+
+		HSSFCellStyle cellStyle = wb.createCellStyle();
+
+		cellStyle.setFont(font);
+		cellStyle.setWrapText(wrapText);// 文本区域随内容多少自动调整
+		cellStyle.setBorderBottom(borderBottom); // 下边
+		cellStyle.setBorderLeft(borderLeft); // 左边
+		cellStyle.setBorderRight(borderRight); // 右边
+		cellStyle.setBorderTop(borderTop); // 上边
+		cellStyle.setAlignment(alignment); // 对齐方式
+		cellStyle.setVerticalAlignment(verticalAlignment);// 垂直对齐方式
+
+		return cellStyle;
+
+	}
+	
+	/**
+	 * 创建表头
+	 * 
+	 * @param title
+	 */
+	public static void createTableHeader(String title) {
+		HSSFHeader header = sheet.getHeader();
+		// Regular：正常；Italic：斜体；Bold：粗体
+		header.setCenter(HSSFHeader.font("黑体", "Bold")
+				+ HSSFHeader.fontSize((short) 16) + title);
+	}
+
+	/**
+	 * 创建表尾
+	 * 
+	 * @param request
+	 */
+	public static void createTableFooter(HttpServletRequest request) {
+		HSSFFooter footer = sheet.getFooter();
+		footer.setCenter("第" + HSSFFooter.page() + " 页，共 "
+				+ HSSFFooter.numPages() + "页");
+		String createDate = HSSFFooter.date();
+		String createUser = "admin";
+		footer.setRight("制表日期：" + createDate + " 制表人：" + createUser);
+	}
+
+	/**
+	 * 创建单元格
+	 * 
+	 * @param row
+	 * @param cellnum
+	 * @param value
+	 * @param cellStyle
+	 */
+	public static void createTableCell(short cellnum, String value,
+			HSSFCellStyle cellStyle, int cellTextType) {
+		if (value == null || value.equals("null")) {
+			value = " ";
+		}
+		cell = row.createCell(cellnum);
+		cell.setCellType(cellTextType);
+		cell.setCellStyle(cellStyle);
+		cell.setCellValue(new HSSFRichTextString(value));
+
+	}
+
+	 /** 
+	 * 创建zip压缩包 
+	 *  
+	 * @param file 
+	 * @param parentPath 
+	 * @param zos 
+	 */  
+	private static void writeZip(File file, String parentPath,  
+			ZipOutputStream zos) {  
+		zos.setEncoding("gbk");  
+		if (file.exists()) {  
+			if (file.isDirectory()) {// 处理文件夹  
+				parentPath += file.getName() + File.separator;  
+				File[] files = file.listFiles();  
+				for (File f : files) {  
+					zos.setEncoding("gbk");  
+					writeZip(f, parentPath, zos);  
+				}  
+			} else {  
+				FileInputStream fis = null;  
+				DataInputStream dis = null;  
+				try {  
+					fis = new FileInputStream(file);  
+					dis = new DataInputStream(new BufferedInputStream(fis));  
+					ZipEntry ze = new ZipEntry(parentPath + file.getName());  
+					zos.putNextEntry(ze);  
+					zos.setEncoding("gbk");  
+					byte[] content = new byte[1024];  
+					int len;  
+					while ((len = fis.read(content)) != -1) {  
+						zos.write(content, 0, len);  
+						zos.flush();  
+					}  
+  
+				} catch (FileNotFoundException e) {  
+					System.out.println(("创建ZIP文件失败"));  
+				} catch (IOException e) {  
+					System.out.println(("创建ZIP文件失败"));  
+				} finally {  
+					try {  
+						if (dis != null) {  
+							dis.close();  
+						}  
+					} catch (IOException e) {  
+						System.out.println(("创建ZIP文件失败"));  
+					}  
+				}  
+			}  
+		}  
+	}  
+	
+	/***************************************************************************
+	 * Excel导入数据库相关操作
+	 **************************************************************************/
+
+	/**
+	 * 上传Excel文件
+	 * 
+	 * @param request
+	 *			上传文件请求
+	 * @return 上传成功，返回上传Excel保存文件名全路径
+	 */
+	public static String uploadExcel(HttpServletRequest request)
+			throws Exception {
+		// 判断是否是上传文件请求
+		boolean isUploadFile = FileUpload.isMultipartContent(request);
+		// 非文件上传请求直接返回null
+		if (!isUploadFile) {
+			throw new Exception("不是上传Excel请求");
+		}
+
+		// Web应用根目录
+		String appRootDir = request.getRealPath("/");
+
+		// 临时文件夹
+		String uploadTemp = appRootDir + File.separator + "temp";
+		// 创建临时文件夹
+		if (!new File(uploadTemp).isDirectory()) {
+			new File(uploadTemp).mkdirs();
+		}
+		// 最大上传Excel文件大小10M
+		long FILE_MAX_SIZE = 10 * 1024 * 1024;
+		try {
+			DiskFileItemFactory factory = new DiskFileItemFactory();
+			// 设置缓冲区大小，这里是4kb
+			factory.setSizeThreshold(4 * 1024);
+			// 设置临时文件夹
+			factory.setRepository(new File(uploadTemp));
+			ServletFileUpload fu = new ServletFileUpload(factory);
+			// 设置最大文件尺寸
+			fu.setSizeMax(FILE_MAX_SIZE);
+			// 得到所有的文件，以及其它请求参数
+			List fileItems = fu.parseRequest(request);
+
+			FileItem fileItem = null;
+			for (int i = 0; i < fileItems.size(); i++) {
+				fileItem = (FileItem) fileItems.get(i);
+				if (!fileItem.isFormField()) {// 文件域
+					// 过滤掉文件名（包含路径）为空或大小为0的文件
+					if (fileItem.getName() == null
+							|| fileItem.getName().equals("")
+							|| fileItem.getSize() == 0) {
+						continue;
+					}
+				}
+			}
+
+			if (fileItem == null) {
+				// 删除临时文件夹
+				(new File(uploadTemp)).delete();
+				throw new Exception("上传Excel不合法");
+			}
+
+			// 判断上传文件类型是否都合法
+			// 获取文件名（包含路径）
+			String filePath = fileItem.getName();
+			String fileExt = "";
+			if (filePath.indexOf(".") > -1) {
+				fileExt = filePath.substring(filePath.lastIndexOf(".") + 1);
+			}
+			// 判断文件类型是否合法
+			if (!fileExt.equalsIgnoreCase("xls")) {
+				// 删除临时文件夹
+				(new File(uploadTemp)).delete();
+				throw new Exception("上传的不是Excel文件");
+			}
+
+			// 上传文件
+			String fileStoreFullName = uploadTemp + File.separator
+					+ "" + "." + fileExt;
+
+			fileItem.write(new File(fileStoreFullName));
+
+			return fileStoreFullName;
+		} catch (SizeLimitExceededException se) {
+			// 删除临时文件夹
+			(new File(uploadTemp)).delete();
+			throw new Exception("上传Excel文件超过" + FILE_MAX_SIZE + "字节");
+		} catch (Exception ex) {
+			// 删除临时文件夹
+			(new File(uploadTemp)).delete();
+			ex.printStackTrace();
+			throw new Exception("上传Excel文件出错");
+		}
+	}
+
+	/**
+	 * 得到Excel sheet
+	 * 
+	 * @param filePath
+	 * @return
+	 */
+	public static void getTheSheet(String filePath) throws IOException {
+		POIFSFileSystem fs = null;
+		try {
+			fs = new POIFSFileSystem(new FileInputStream(filePath));
+
+			wb = new HSSFWorkbook(fs);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new IOException("获取Excel文件出错");
+		}
+		sheet = wb.getSheetAt(0);
+	}
+
+	/**
+	 * 
+	 * 得到表格中所有行指定列的数据
+	 * 
+	 * @param filePath
+	 * @param colInfo
+	 * @return
+	 * @throws Exception
+	 * @author hubo
+	 */
+	public static List getColDataPerRow(String filePath, String colInfo,
+			int statRowNum) throws Exception {
+		try {
+			getTheSheet(filePath);
+			List rowList = new ArrayList();
+			int rows = sheet.getLastRowNum();
+			String[] colInfoArray = colInfo.split(",");
+			for (int i = statRowNum; i <= rows; i++) {//
+				row = sheet.getRow(i);// 得到行
+				if (row == null) {
+					continue;
+				}
+				Map map = new HashMap();
+				boolean allBlank = true;
+				for (int j = 0; j < colInfoArray.length; j++) {
+					String[] cellIndex = getRowColNumIndex(colInfoArray[j]);// 处理行列标识字符串为对应的索引数值
+					cell = row.getCell(Short.parseShort(cellIndex[0]));// 得到该行所需统计列的数据，就是指定到单元格了
+					if (cell == null) {
+						map.put(colInfoArray[j], "");
+					} else {
+						if (cell.getCellType() == HSSFCell.CELL_TYPE_NUMERIC) {
+							/*
+							 * //System.out .println("number:" +
+							 * String.valueOf(cell .getNumericCellValue()));
+							 */
+							String str = NumberFormat.getNumberInstance()
+									.format(cell.getNumericCellValue());
+							while (str.indexOf(",") > -1) {
+								str = str.substring(0, str.indexOf(","))
+										+ str.substring(str.indexOf(",") + 1);
+							}
+
+							if (str!=null) {
+								allBlank = false;
+							}
+
+							map.put(colInfoArray[j], str);
+
+							System.err.println("str===" + str + "!");
+							/* //System.out.println("number:" + str); */
+						} else {
+							/*
+							 * //System.out .println("text:" +
+							 * cell.toString().trim());
+							 */
+
+							if (cell.toString().trim()!=null) {
+								allBlank = false;
+							}
+
+							map.put(colInfoArray[j], cell.toString().trim());
+						}
+
+					}
+				}
+				if (!allBlank) {
+					rowList.add(map);// 每一行对应一个Map对象存入List，List的大小即是行数
+				}
+
+			}
+			return rowList;
+		} catch (Exception e) {
+			// TODO: handle exception
+			throw e;
+		}
+	}
+
+	/**
+	 * 
+	 * 得到表格中指定单元格的数据
+	 * 
+	 * @param filePath
+	 * @param cellInfo
+	 * @return
+	 * @throws Exception
+	 * @author hubo
+	 */
+	public static Map getCellData(String filePath, String cellInfo)
+			throws Exception {
+		try {
+			getTheSheet(filePath);// 获取工作作对象
+			String[] cellInfoArray = cellInfo.split(",");// 处理单元格信息字符串
+			Map map = new HashMap();
+			for (int i = 0; i < cellInfoArray.length; i++) {
+				String[] cellIndex = getRowColNumIndex(cellInfoArray[i]);// 处理单元格字符串为对应的索引数值
+				int rownum = Integer.parseInt(cellIndex[1]);// 行索引值
+				row = sheet.getRow(rownum);// 获取行
+				if (row == null) {
+					continue;
+				}
+				short colnum = Short.parseShort(cellIndex[0]);// 列索引值
+				cell = row.getCell(colnum);// 获取单元格
+				if (cell == null) {
+					map.put(cellInfoArray[i], "");
+				} else {
+					if (cell.getCellType() == HSSFCell.CELL_TYPE_FORMULA) {
+						map.put(cellInfoArray[i], String.valueOf(cell
+								.getNumericCellValue()));
+					} else {
+						map.put(cellInfoArray[i], cell.toString().trim());
+					}
+
+				}
+			}
+			return map;
+		} catch (RuntimeException e1) {
+			// TODO: handle exception
+			throw e1;
+		} catch (Exception e) {
+			// TODO: handle exception
+			throw e;
+		}
+	}
+
+	/**
+	 * 将列的索引换算成ABCD字母，这个方法要在插入公式时用到。
+	 * 
+	 * @param colIndex
+	 *			列索引。
+	 * @return ABCD字母。
+	 * @author hubo
+	 */
+	public static String getColLetter(int colIndex) {
+		String ch = "";
+		if (colIndex < 26)
+			ch = "" + (char) ((colIndex) + 65);
+		else
+			ch = "" + (char) ((colIndex) / 26 + 65 - 1)
+					+ (char) ((colIndex) % 26 + 65);
+		return ch;
+	}
+
+	/**
+	 * 根据输入的字母判断所在列的索引值,如A为0,Z为25,AA为26,IV为255
+	 * 
+	 * @param colLetter
+	 * 
+	 * @return 表示excel列的int类型索引值
+	 * @author hubo
+	 */
+	public static int getColIndex(String colLetter) throws Exception {
+
+		// 将小写字母转换为大写
+		colLetter = colLetter.toUpperCase();
+		// 要返回的索引值
+		int colIndex = -1;
+
+		if (colLetter.length() == 1) {// 如果是一个字母的情况
+			colIndex = Character.getNumericValue(colLetter.toCharArray()[0]) - 10;
+		} else if (colLetter.length() == 2) {// 如果是两个字母的情况
+			colIndex = (Character.getNumericValue(colLetter.toCharArray()[0]) - 10 + 1)
+					* 26
+					+ Character.getNumericValue(colLetter.toCharArray()[1])
+					- 10;
+		}
+		if (colIndex <= -1) {
+			throw new Exception("列索引值不对");
+		}
+
+		return colIndex;
+	}
+
+	/**
+	 * 
+	 * 获取行列数字型索引标识数组
+	 * 
+	 * @param rowColString
+	 * @return String[]
+	 * @author hubo
+	 */
+	public static String[] getRowColNumIndex(String rowColString)
+			throws Exception {
+		String[] rowColNumIndex = { "", "" };
+		String[] rowColFlag = splitRowColIndex(rowColString);
+		int colNumIndex = getColIndex(rowColFlag[0]);
+		rowColNumIndex[0] = String.valueOf(colNumIndex);
+		if (null!=(rowColFlag[1])) {
+			rowColNumIndex[1] = String
+					.valueOf(Integer.parseInt(rowColFlag[1]) - 1);
+		}
+
+		return rowColNumIndex;
+	}
+
+	/**
+	 * 分割输入的单元格标识，返回列和行的标识数组
+	 * 
+	 * @param rowColString
+	 * @return
+	 * @author hubo
+	 */
+	public static String[] splitRowColIndex(String rowColString) {
+		String[] rowColFlagArray = { "", "" };
+		char[] rowColCharArray = rowColString.toCharArray();
+		String colString = "";
+		String rowString = "";
+		// 下面两个整形变量用于判断输入的行列索引值字母和数值的位置，用来解决对如“A2C3B”这类字母和数据交错输入的检查
+		int lastColStringIndex = 0;
+		int firstRowStringIndex = 0;
+		String firstRowStringIndexFlag = "0";
+		for (int i = 0; i < rowColCharArray.length; i++) {
+			if (Character.isLetter(rowColCharArray[i])) {
+				colString += rowColCharArray[i];
+				lastColStringIndex = i;
+			} else {
+				rowString += rowColCharArray[i];
+				if (firstRowStringIndexFlag.equals("0")) {
+					firstRowStringIndex = i;
+					firstRowStringIndexFlag = "1";
+				}
+			}
+		}
+		if (firstRowStringIndex == 0
+				|| (firstRowStringIndex > lastColStringIndex)) {
+			rowColFlagArray[0] = colString;
+			rowColFlagArray[1] = rowString;
+
+			return rowColFlagArray;
+		} else {
+			return null;
+		}
+
+	}
+	
+	/**
+	 * 字体初始化
+	 */
+	public HSSFFont initFont(HSSFFont font,byte charset,String name,short height,short boldweight){
+		font.setCharSet(charset);//编码
+		font.setFontName(name);//设置字体名称
+		font.setFontHeightInPoints(height);//设置字号
+		font.setBoldweight(boldweight); // 字体加粗
+		
+		return font;
+	}
+	/**
+	 * 单元格样式初始化
+	 */
+	public HSSFCellStyle initCellStyle(HSSFCellStyle cellStyle,boolean wrapped,short border,short align,short verAlign) {
+		cellStyle.setWrapText(wrapped);// 文本区域随内容多少自动调整
+		cellStyle.setBorderBottom(border); // 下边
+		cellStyle.setBorderLeft(border); // 左边
+		cellStyle.setBorderRight(border); // 右边
+		cellStyle.setBorderTop(border); // 上边
+		cellStyle.setAlignment(align); // 对齐方式
+		cellStyle.setVerticalAlignment(verAlign);// 垂直对齐方式
+		
+		return cellStyle;
+	}
+	
+	//判断文件是否excel 2003格式
+	public static boolean isExcel2003(File file) {
+		try {
+			new HSSFWorkbook(new FileInputStream(file));
+		} catch (Exception e) {
+			return false;
+		}
+		return true;
+	}
+
+	//判断文件是否excel 2007格式
+	public static boolean isExcel2007(File file) {
+		try {
+			new XSSFWorkbook( new FileInputStream(file));
+		} catch (Exception e) {
+			return false;
+		}
+		return true;
+	}
+	
+	public static Object getCellValue(Cell cell){
+		Object objVal = null;
+		switch (cell.getCellType()) {	//根据cell中的类型来输出数据
+		case HSSFCell.CELL_TYPE_NUMERIC:
+			//判断是否为日期类型
+			if(HSSFDateUtil.isCellDateFormatted(cell)){
+				//用于转化为日期格式
+				objVal = cell.getDateCellValue();
+			}else{
+				// 用于格式化数字，只保留数字的整数部分
+				objVal = getRightStr(cell.getNumericCellValue() + "");   
+			}
+			break;
+		case HSSFCell.CELL_TYPE_STRING:
+			objVal = cell.getStringCellValue();
+			break;
+		case HSSFCell.CELL_TYPE_BOOLEAN:
+			objVal = cell.getBooleanCellValue();
+			break;
+		case HSSFCell.CELL_TYPE_FORMULA:
+			System.out.println(cell.getCellFormula());
+			objVal = cell.getCellFormula();
+			break;
+		default:
+			objVal = null;
+		break;
+		}
+		
+		return objVal;
+	}
+	
+	public static String getRightStr(String sNum){
+		DecimalFormat decimalFormat = new DecimalFormat("#");
+		String resultStr = decimalFormat.format(new Double(sNum));
+		if (resultStr.matches("^[-+]?\\d+\\.[0]+$")){
+			resultStr = resultStr.substring(0, resultStr.indexOf("."));
+		}
+		return resultStr;
+	}
+	
+	/**
+	 * 导出表格至Response流
+	 * 
+	 * @param response
+	 * @param fileName
+	 * @throws Exception
+	 */
+	public static void exportExcel(HttpServletRequest request,
+			HttpServletResponse response, String fileName) throws Exception {
+		if (fileName == null || fileName.equals(""))
+			fileName = "temp";
+
+		try {
+			fileName = java.net.URLEncoder.encode(fileName, "UTF-8");
+		} catch (UnsupportedEncodingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		OutputStream os = response.getOutputStream(); // 取得response输出流
+		// String filePath =
+		// request.getSession().getServletContext().getRealPath("/temp");
+		// 文件夹不存在就自动创建
+		// if (!new File(filePath).isDirectory()) {
+		// new File(filePath).mkdirs();
+		// }
+
+		// fileName =
+		// IdentityFactory.getInstance().getIdentity(Identity.STYLE_DATA_DEFAULT)
+		// + ".xls";
+
+		// OutputStream os = new FileOutputStream(filePath+"/"+fileName); //
+		// 取得到文件的输出流
+		response.reset(); // 清空输出流
+		response.setContentType("application/vnd.ms-excel"); // 定义输出类型
+
+		/*
+		 * response.setHeader("Content-Disposition", "attachment;filename=" +
+		 * new String(IdUtil.getRandomStr().getBytes(), "iso-8859-1") + ".xls");
+		 */// 设定输出文件头
+		response.setHeader("Content-Disposition", "attachment;filename="
+				+ fileName + ".xls"); // 设定输出文件头
+		wb.write(os);
+		os.flush();
+		os.close();
+		response.flushBuffer();
+
+		// request.setAttribute("returnMsg", fileName);
+	}
+
+	/**
+	 * 输出Excel表格至Response通用方法
+	 * @param request
+	 *              HttpServletRequest对象
+	 * @param response
+	 *            HttpServletResponse对象
+	 * @param regions
+	 *            Excel单元格合并情况
+	 * @param heightInPointList
+	 *            行高
+	 * @param columnWidthList
+	 *            列宽
+	 * @param cellStyleList
+	 *            单元格样式
+	 * @param data
+	 *            单元格内容
+	 * @param fileName
+	 *            Excel文件名
+	 */
+	public static void createExportExcel(HttpServletRequest request,HttpServletResponse response,int[][] regions, 
+			List<Float> heightInPointList, List<Short> columnWidthList, List<HSSFCellStyle> cellStyleList, Object[][] data, String fileName) {
+		
+		try {
+			wb = new HSSFWorkbook();
+			sheet = wb.createSheet("Sheet1");
+			
+			//单元格合并
+			//四个参数分别是：起始行，起始列，结束行，结束列
+			for (int i = 0; i < regions.length; i++) {
+				if(regions[i].length>3){
+					sheet.addMergedRegion(new Region(regions[i][0], (short) regions[i][1], regions[i][2],(short) regions[i][3]));
+				}
+			}
+			HSSFCellStyle cellStyle = wb.createCellStyle();
+			//输出excel内容
+			for (int i = 0; i < data.length; i++) {
+				row = sheet.createRow((short) i);
+				row.setHeightInPoints(heightInPointList.get(i));
+				cellStyle.cloneStyleFrom(cellStyleList.get(i));
+				
+//				System.out.println("第"+i+"行");
+				for (int j = 0; j < data[i].length; j++) {
+//					System.out.println("第"+j+"列");
+					createTableCell((short) j, data[i][j]==null?"":data[i][j].toString(), cellStyle, HSSFCell.CELL_TYPE_STRING);
+				}
+			}
+			
+			// 设置列宽
+			for (int i = 0; i < columnWidthList.size(); i++) {
+				sheet.setColumnWidth((short) i, columnWidthList.get(i));
+			}
+			
+			// 导出表格至Response流
+			exportExcel(request, response, fileName);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	/**
+	 * 读取Excel文件数据通用方法
+	 * 返回二位数组
+	 * file:读取的文件
+	 * beginRow：开始行
+	 * beginCel：开始列
+	 */
+	public static Object[][] readExcel(File file,int beginRow,int beginCel) {
+		Object[][] excelData;
+		
+		boolean isE2007 = false;	//判断是否是excel2007格式
+//		if(file.getName().endsWith("xlsx"))
+//			isE2007 = true;
+		if(isExcel2007(file))
+			isE2007 = true;
+		try {
+			InputStream input = new FileInputStream(file);	//建立输入流
+			Workbook wb  = null;
+			//根据文件格式(2003或者2007)来初始化
+			if(isE2007)
+				wb = new XSSFWorkbook(input);
+			else
+				wb = new HSSFWorkbook(input);
+			Sheet sheet = wb.getSheetAt(0);		//获得第一个表单
+			Iterator<Row> rows = sheet.rowIterator();	//获得第一个表单的迭代器
+			
+			excelData = new Object[sheet.getLastRowNum()+1-beginRow][];		
+			while (rows.hasNext()) {
+				Row row = rows.next();//获得行数据
+				//System.out.println("Row #" + row.getRowNum());	//获得行号从0开始
+				if(row.getRowNum() < beginRow){
+					continue;
+				}
+				if(row.getLastCellNum()-beginCel<0)
+					continue;
+				if((row.getRowNum()-beginRow)>=excelData.length)
+					continue;
+				excelData[row.getRowNum()-beginRow] = new Object[row.getLastCellNum()-beginCel];
+				Iterator<Cell> cells = row.cellIterator();	//获得第一行的迭代器
+				while (cells.hasNext()) {
+					Cell cell = cells.next();
+					if(cell.getColumnIndex() < beginCel){
+						continue;
+					}
+					if((cell.getColumnIndex()-beginCel) >= excelData[row.getRowNum()-beginRow].length)
+						continue;
+					Object objVal = getCellValue(cell);
+//					if(objVal == null){
+//						continue;
+//					}
+					excelData[row.getRowNum()-beginRow][cell.getColumnIndex()-beginCel] = objVal;
+				}
+			}
+			input.close();
+		} catch (IOException ex) {
+			
+			excelData = new Object[0][0];
+			
+			ex.printStackTrace();
+		}
+		
+		return excelData;
+	}
+	
+	/**==================================*/
+	public static void main(String[] args) {
+
+		try {
+
+			HSSFWorkbook wb = new HSSFWorkbook();
+			HSSFSheet sheet = wb.createSheet("new sheet");
+			sheet.setRowBreak(1);
+			sheet.setColumnBreak(Short.parseShort("1"));
+			FileOutputStream fileOut = new FileOutputStream(
+					"E:\\dev\\cowork_lssh\\workbook.xls");
+			wb.write(fileOut);
+			fileOut.close();
+
+			System.out.println("done");
+
+			// String[] arrayColName = { "件号", "责任者", "文件编号", "文件题名", "归档日期",
+			// "页数", "备注" };
+			// System.out.println(arrayColName.length);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+}
