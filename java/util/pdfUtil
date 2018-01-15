@@ -1,0 +1,211 @@
+
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Element;
+import com.itextpdf.text.Image;
+import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.BaseFont;
+import com.itextpdf.text.pdf.PdfContentByte;
+import com.itextpdf.text.pdf.PdfGState;
+import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.PdfStamper;
+import com.itextpdf.text.pdf.parser.ImageRenderInfo;
+import com.itextpdf.text.pdf.parser.PdfReaderContentParser;
+import com.itextpdf.text.pdf.parser.RenderListener;
+import com.itextpdf.text.pdf.parser.TextRenderInfo;
+import com.sun.istack.FinalArrayList;
+
+public class PdfUtils {
+	public static void addPicToPdf(String templatePath, String targetPath, String imagePath) {
+		addPicToPdf(templatePath, targetPath, imagePath, 0, 0);
+	}
+	
+	public static void addPicToPdf(String templatePath, String targetPath, String imagePath, float mx, float my) {
+//		Map<String, com.itextpdf.awt.geom.Rectangle2D.Float> bookMark = getBookMark(templatePath);
+//		com.itextpdf.awt.geom.Rectangle2D.Float photoMark = bookMark.get("item");
+		
+		PdfReader pdfReader = null;
+		PdfStamper stamper = null;
+		try {
+			InputStream input = new FileInputStream(new File(templatePath));
+			pdfReader = new PdfReader(input);
+			stamper = new PdfStamper(pdfReader, new FileOutputStream(targetPath));
+			
+			Rectangle size = pdfReader.getPageSize(1);  
+		 	float pdfY = size.getTop();//PDF页面高度  
+		 	float pdfX = size.getRight();//PDF页面宽度  
+		 	int pageSize = pdfReader.getNumberOfPages();
+		 	
+		 	PdfContentByte over = null;
+		 	Image image = null;
+		 	PdfGState gs = null;
+			// 添加图片
+		 	for (int i = 1; i <= pageSize+1; i++) {
+		 		// 获取操作的页面
+				over = stamper.getOverContent(i);
+				image = Image.getInstance(imagePath);
+//				int[] transparency = new int[]{5,500};
+//				image.setTransparency(transparency);
+//				image.setAbsolutePosition(photoMark.x+mx, photoMark.y+my);
+				image.setAbsolutePosition(55, pdfY-255);
+				image.scalePercent(80);
+				gs = new PdfGState();
+				gs.setFillOpacity(0.7f);// 设置透明度为0.
+				over.setGState(gs);
+				over.addImage(image);
+			}
+		 	
+		} catch (Exception e) {
+		} finally {
+			if(stamper!=null){
+				try {
+					stamper.close();
+				} catch (DocumentException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			if(pdfReader!=null){
+				pdfReader.close();
+			}
+		}
+	}
+	public static void addPicAndTextToPdf(String templatePath, String targetPath, String imagePath) {
+		addPicAndTextToPdf(templatePath, targetPath, imagePath, 0, 0);
+	}
+	//在PDF里面加图片和文字
+	public static void addPicAndTextToPdf(String templatePath, String targetPath, String imagePath, float mx, float my) {	
+		PdfReader pdfReader = null;
+		PdfStamper stamper = null;
+		try {
+			InputStream input = new FileInputStream(new File(templatePath));
+			pdfReader = new PdfReader(input);
+			stamper = new PdfStamper(pdfReader, new FileOutputStream(targetPath));
+			
+			Rectangle size = pdfReader.getPageSize(1);  
+			float pdfY = size.getTop();//PDF页面高度  
+			float pdfX = size.getRight();//PDF页面宽度  
+			int pageSize = pdfReader.getNumberOfPages();
+			
+			PdfContentByte over = null;
+			Image image = null;
+			PdfGState gs = null;
+			// 添加图片
+			for (int i = 1; i <= pageSize+1; i++) {
+				// 获取操作的页面
+				over = stamper.getOverContent(i);
+				image = Image.getInstance(imagePath);
+				image.setAbsolutePosition(pdfX-200, pdfY-255);
+				image.scalePercent(10);
+				gs = new PdfGState();
+				gs.setFillOpacity(0.7f);// 设置透明度为0.
+				over.setGState(gs);
+				over.addImage(image);
+				BaseFont yaHei = BaseFont.createFont("c://windows//fonts//msyh.ttc,0", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+		        over.beginText();
+		        over.setFontAndSize(yaHei, 10);
+		        over.setTextMatrix(200, 200);
+		        over.showTextAligned(Element.ALIGN_CENTER,"张三",pdfX-600,pdfY-165,0);
+		        over.showTextAligned(Element.ALIGN_CENTER,"男",pdfX-300,pdfY-165,0);
+		        over.showTextAligned(Element.ALIGN_CENTER,"汉",pdfX-600,pdfY-187,0);
+		        over.showTextAligned(Element.ALIGN_CENTER,"19701231",pdfX-300,pdfY-187,0);
+		        over.showTextAligned(Element.ALIGN_CENTER,"411111197012311111",pdfX-450,pdfY-209,0);
+		        over.showTextAligned(Element.ALIGN_CENTER,"浙江省兰溪市诸葛镇诸葛村３号",pdfX-450,pdfY-231,0);
+		        over.endText();
+			}
+		} catch (Exception e) {	
+		} finally {
+			if(stamper!=null){
+				try {
+					stamper.close();
+				} catch (DocumentException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			if(pdfReader!=null){
+				pdfReader.close();
+			}
+		}
+	}
+	
+	public static Map<String, com.itextpdf.awt.geom.Rectangle2D.Float> getBookMark(String pdfPath){
+		
+		final Map<String, com.itextpdf.awt.geom.Rectangle2D.Float> bookMarkPosition = new HashMap<String, com.itextpdf.awt.geom.Rectangle2D.Float>();
+		
+		PdfReader pdfReader = null;
+		try {
+			pdfReader = new PdfReader(pdfPath);
+			int pageNum = pdfReader.getNumberOfPages();
+			PdfReaderContentParser pdfReaderContentParser = new PdfReaderContentParser(pdfReader);
+			// 下标从1开始
+			for(int i = 1; i <= pageNum; i++) {
+				pdfReaderContentParser.processContent(i, new RenderListener() {
+					private StringBuilder sb = new StringBuilder();
+					private List<com.itextpdf.awt.geom.Rectangle2D.Float> position = new ArrayList<com.itextpdf.awt.geom.Rectangle2D.Float>();
+					@Override
+					public void renderText(TextRenderInfo textRenderInfo) {
+						String text = textRenderInfo.getText();
+						if(text!=null){
+							sb.append(text.trim());
+							position.add(textRenderInfo.getBaseline().getBoundingRectange());
+						}
+					}
+
+					@Override
+					public void renderImage(ImageRenderInfo arg0) {
+					}
+
+					@Override
+					public void endTextBlock() {
+						String text = sb.toString();
+						if(text.startsWith("${") && text.endsWith("}")){
+							bookMarkPosition.put(sb.substring(2, sb.length()-1), position.get(0));
+						}
+					}
+
+					@Override
+					public void beginTextBlock() {
+						sb.setLength(0);
+						position.clear();
+					}
+				});
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if(pdfReader!=null){
+				pdfReader.close();
+			}
+		}
+		return bookMarkPosition;
+	}
+	
+	public static void main(String[] args) {
+		SimpleDateFormat sdf2 = new SimpleDateFormat("yyyyMMddHHmmss");
+		String time = sdf2.format(new Date());
+		// 模板文件路径
+		String templatePath = "E:/test.pdf";
+		// 生成的文件路径
+		String targetPath = "E:/driver_add_pic"+time+".pdf";
+		// 图片路径
+		String imagePath = "E:/gz.png";
+		
+		addPicToPdf(templatePath, targetPath, imagePath);
+		
+	}
+}
