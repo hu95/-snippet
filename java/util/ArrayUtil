@@ -1,0 +1,23 @@
+
+/**
+ * 数组工具类
+ * 
+ * @version 1.0
+ * @author: 
+ */
+public class ArrayUtil {
+	/**
+	 *获得一个动态二维数组第二维的最大长度
+	 * @param date
+	 * @return
+	 */
+	public static Integer getMaxLength_j(Object[][] data){
+		int length = 0;
+		for (int i = 0; i < data.length; i++) {
+			if(data[i].length>length)
+				length = data[i].length;
+		}
+		
+		return length;
+	}
+}
