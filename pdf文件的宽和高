@@ -1,0 +1,16 @@
+    PdfReader pdfReader = null;
+		try {
+			InputStream input = new FileInputStream(new File(templatePath));
+			pdfReader = new PdfReader(input);
+			
+			Rectangle size = pdfReader.getPageSize(1);  
+			pdfY = size.getTop();//PDF页面高度  
+			pdfX = size.getRight();//PDF页面宽度  
+			// 添加图片
+			
+		} catch (Exception e) {	
+		} finally {
+			if(pdfReader!=null){
+				pdfReader.close();
+			}
+		}
