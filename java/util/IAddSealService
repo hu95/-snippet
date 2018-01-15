@@ -1,0 +1,462 @@
+package com.risen.app.service;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.jws.WebService;
+
+import org.apache.poi.POIXMLDocument;
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.apache.poi.xwpf.usermodel.XWPFStyles;
+import org.apache.poi.xwpf.usermodel.XWPFTable;
+import org.apache.poi.xwpf.usermodel.XWPFTableCell;
+import org.apache.poi.xwpf.usermodel.XWPFTableRow;
+import org.springframework.stereotype.Service;
+
+import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
+
+import com.itextpdf.text.pdf.PdfStructTreeController.returnType;
+import com.risen.base.util.MyFileConvertUtils;
+
+@Service("IAddSealService")
+@WebService(endpointInterface="com.risen.app.service.IAddSealService", serviceName="IAddSealService")
+public class AddSealServiceImpl implements IAddSealService{
+	
+	static SimpleDateFormat sdf2 = new SimpleDateFormat("yyyyMMddHHmmss");
+	
+//	本地测试文件地址
+//	//电子签章名（即文档中标识的名字）(不用)
+//	public final static String ESEALNAME = "{$Stamp}";
+//	//文档路径
+//	public final static String FILEPATH = "E:\\";
+//	//签章图片路径
+//	public final static String IMGPATH = "E:\\gz.png";
+//	//word处理exe程序
+//	public final static String EXEPATH = "E:\\FileStamp.exe";
+	
+//	正式项目文件地址
+	//电子签章名（即文档中标识的名字）(不用)
+	public final static String ESEALNAME = "#{myseal}#";
+	//文档路径
+	public final static String FILEPATH = "E:\\risen\\app\\signature\\tempFile\\";
+	//签章图片路径
+	public final static String IMGPATH = "E:\\risen\\app\\signature\\gz.png";
+	//word处理exe程序
+	public final static String EXEPATH = "E:\\risen\\app\\signature\\FileStamp.exe";
+	
+	
+	public static void main(String[] args) {
+			
+		String filePath = "E:\\test.docx"; 
+		String base64Str = GetImageStr(filePath);
+//		System.out.println(base64Str);
+		
+		String result = getStringByBase64_TG(base64Str);
+//		//System.out.println(result);
+//		
+		base64StringToPdf(result, "e:\\new2.pdf");
+		/*String filePath = MyESeal.WORDPATH; 
+		System.out.println(readwriteWord(filePath));*/
+		
+	}
+	
+	public static String getStringByBase64(String base64String){
+		byte[] bt = null;
+		//解码
+		try {
+			sun.misc.BASE64Decoder decoder = new sun.misc.BASE64Decoder();  
+			bt = decoder.decodeBuffer(base64String);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		//1.将传过来的base64字符串写成word文档
+		String tempFileName = createFileName();
+		//生成word路径
+		String wordFile = AddSealServiceImpl.FILEPATH+tempFileName;
+		getFile(bt, wordFile);
+		//2.在word文档中的指定位置加入图片
+		String pdfFile = AddSealServiceImpl.FILEPATH+tempFileName.substring(0, tempFileName.indexOf("."))+".pdf";
+//		String newFilePath = readwriteWord(wordFile);
+//		System.out.println(newFilePath);
+		//3.将word文档转成pdf
+//		MyFileConvertUtils.word2pdfBySaveAs(newFilePath, pdfFile);
+		//在word文档的指定位置加入图片，并转换成pdf
+		readWord2pdfBySaveAs(wordFile, pdfFile);
+		//4.将pdf转成base64字符串返回
+		File file = new File(pdfFile);
+		String resultStr = PDFToBase64(file);
+		
+		return resultStr;
+	}
+
+	/**读取并操作word2007中的内容*/
+	public static String readwriteWord(String filePath){ 
+		
+		File isExist = new File(filePath);
+		/**判断源文件是否存在*/
+		if(!isExist.exists()){
+			return "源文件不存在！";
+		}
+		//进行原文件的备份
+		String fileName = isExist.getName();
+		String name = fileName.substring(0, fileName.indexOf("."));
+		String hz = fileName.substring(fileName.indexOf(".")+1, fileName.length());
+		String path= isExist.getPath().substring(0, isExist.getPath().indexOf(fileName));
+		//copyFile(filePath, path+name+"_copy."+hz);
+		
+		CustomXWPFDocument document;
+		try {
+			/**打开word2007的文件*/
+			OPCPackage opc = POIXMLDocument.openPackage(filePath);
+			document = new CustomXWPFDocument(opc);
+			/**替换word2007的纯文本内容*/
+			List<XWPFRun> listRun;
+			List<XWPFParagraph> listParagraphs = document.getParagraphs();
+			for (int i = 0; i < listParagraphs.size(); i++) {
+				listRun = listParagraphs.get(i).getRuns();
+				for (int j = 0; j < listRun.size(); j++) {
+					XWPFRun run = listRun.get(j);
+					if(AddSealServiceImpl.ESEALNAME.equals(run.getText(0))){
+						listRun.get(j).setText("",0);
+						File pic = new File(AddSealServiceImpl.IMGPATH);
+						FileInputStream is = new FileInputStream(pic);
+						XWPFParagraph vParagraph =run.getParagraph();
+						document.addPictureData(is, XWPFDocument.PICTURE_TYPE_PNG); 
+						document.createPicture(document.getAllPictures().size()-1, 200, 200, vParagraph);
+						if(is != null){
+							is.close();
+						}
+					}
+				} 
+			}
+			/**取得文本的所有表格*/
+			Iterator<XWPFTable> it = document.getTablesIterator();
+			while(it.hasNext()){/**循环操作表格*/
+				XWPFTable table = it.next();
+				List<XWPFTableRow> rows = table.getRows();
+				for(XWPFTableRow row:rows){/**取得表格的行*/
+					List<XWPFTableCell> cells = row.getTableCells();
+					for(XWPFTableCell cell:cells){/**取得单元格*/
+						if(AddSealServiceImpl.ESEALNAME.equals(cell.getText())){/**判断单元格的内容是否为需要替换的图片内容*/
+							File pic = new File(AddSealServiceImpl.IMGPATH);
+							FileInputStream is = new FileInputStream(pic);
+							//cell.removeParagraph(0);
+							XWPFParagraph pargraph = cell.addParagraph();
+							XWPFStyles style = document.createStyles();
+							document.addPictureData(is, XWPFDocument.PICTURE_TYPE_PNG);
+							document.createPicture(document.getAllPictures().size()-1, 200, 200, pargraph);
+							if(is != null){
+								is.close();
+							}
+						}
+						List<XWPFParagraph> pars = cell.getParagraphs();
+						for(XWPFParagraph par:pars){
+							List<XWPFRun> runs = par.getRuns();
+							for(XWPFRun run:runs){
+								run.removeBreak();
+							}
+						}
+					}
+				}
+			} 
+			
+			String downloadPath =path+name+"_finish."+hz;
+			OutputStream os = new FileOutputStream(downloadPath);
+			document.write(os);
+			if(os != null){
+				os.close();
+			}
+			if(opc != null){
+				opc.close();
+			}
+			return downloadPath;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+			
+		return filePath;
+	}
+
+	/**复制文件的方法*/  
+	public static void copyFile(String oldPath, String newPath) {  
+		try {  
+			int bytesum = 0;  
+			int byteread = 0;  
+			File oldfile = new File(oldPath);  
+			if (oldfile.exists()) { //文件存在时  
+				InputStream inStream = new FileInputStream(oldPath); //读入原文件  
+				FileOutputStream fs = new FileOutputStream(newPath);  
+				byte[] buffer = new byte[1444];  
+				while ( (byteread = inStream.read(buffer)) != -1) {  
+					bytesum += byteread; //字节数 文件大小  
+					fs.write(buffer, 0, byteread);  
+				}  
+				inStream.close();  
+				fs.close();  
+			}  
+		}  
+		catch (Exception e) {  
+			System.out.println("复制单个文件操作出错");  
+			e.printStackTrace();  
+		}  
+	}  
+	/** 
+	 * 根据byte数组，生成文件 
+	 */  
+	public static void getFile(byte[] bfile, String filePath) {  
+		BufferedOutputStream bos = null;  
+		FileOutputStream fos = null;  
+		File file = null;  
+		try {  
+			file = new File(filePath);  
+			fos = new FileOutputStream(file);  
+			bos = new BufferedOutputStream(fos);  
+			bos.write(bfile);  
+		} catch (Exception e) {  
+			e.printStackTrace();  
+		} finally {  
+			if (bos != null) {  
+				try {  
+					bos.close();  
+				} catch (IOException e1) {  
+					e1.printStackTrace();  
+				}  
+			}  
+			if (fos != null) {  
+				try {  
+					fos.close();  
+				} catch (IOException e1) {  
+					e1.printStackTrace();  
+				}  
+			}  
+		}  
+	}  
+	/**
+	 * Description: 将pdf文件转换为Base64编码
+	 * @param  要转的的pdf文件
+	 * Create Date: 2015年8月3日 下午9:52:30
+	 */
+	public static String PDFToBase64(File file) {
+		BASE64Encoder encoder = new BASE64Encoder();
+		FileInputStream fin =null;
+		BufferedInputStream bin =null;
+		ByteArrayOutputStream baos = null;
+		BufferedOutputStream bout =null;
+		try {
+			fin = new FileInputStream(file);
+			bin = new BufferedInputStream(fin);
+			baos = new ByteArrayOutputStream();
+			bout = new BufferedOutputStream(baos);
+			byte[] buffer = new byte[1024];
+			int len = bin.read(buffer);
+			while(len != -1){
+				bout.write(buffer, 0, len);
+				len = bin.read(buffer);
+			}
+			//刷新此输出流并强制写出所有缓冲的输出字节
+			bout.flush();
+			byte[] bytes = baos.toByteArray();
+			return encoder.encodeBuffer(bytes).trim();  
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}finally{
+			try {
+				fin.close();
+				bin.close();
+				bout.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return null;
+	}
+	/** 
+	 * 将文件转化为字节数组字符串，并对其进行Base64编码处理 
+	 * @param imgFile 
+	 * @return 
+	 */  
+	public static String GetImageStr(String imgFile) {  
+		InputStream in = null;  
+		byte[] data = null;  
+		// 读取文件字节数组  
+		try {  
+			in = new FileInputStream(imgFile);  
+			data = new byte[in.available()];  
+			in.read(data);  
+			in.close();  
+		} catch (IOException e) {  
+			e.printStackTrace();  
+		}  
+		// 对字节数组Base64编码  
+		BASE64Encoder encoder = new BASE64Encoder();  
+		// 返回Base64编码过的字节数组字符串  
+		return encoder.encode(data);  
+	}
+	/**
+	 * Description: 将base64编码内容转换为Pdf
+	 * @param  base64编码内容，文件的存储路径（含文件名）
+	 * @Author fuyuwei
+	 * Create Date: 2015年7月30日 上午9:40:23
+	 */
+	public static void base64StringToPdf(String base64Content,String filePath){
+		BASE64Decoder decoder = new BASE64Decoder();
+		BufferedInputStream bis = null;
+		FileOutputStream fos = null;
+		BufferedOutputStream bos = null;
+
+		try {
+			byte[] bytes = decoder.decodeBuffer(base64Content);//base64编码内容转换为字节数组
+			ByteArrayInputStream byteInputStream = new ByteArrayInputStream(bytes);
+			bis = new BufferedInputStream(byteInputStream);
+			File file = new File(filePath);
+			File path = file.getParentFile();
+			
+			fos = new FileOutputStream(file);
+			bos = new BufferedOutputStream(fos);
+
+			byte[] buffer = new byte[1024];
+			int length = bis.read(buffer);
+			while(length != -1){
+				bos.write(buffer, 0, length);
+				length = bis.read(buffer);
+			}
+			bos.flush();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			try {
+				 if(bis!=null)
+					 bis.close();
+				 if(fos!=null)
+					 fos.close();
+				 if(bos!=null)
+					 bos.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+		}
+	}
+	
+	public static String createFileName(){
+		String time = sdf2.format(new Date());
+		//String qz = "e:\\mySeal_"+time+".docx";
+		return "mySeal_"+time+".docx";
+	}
+	
+	//word签章后转换成pdf
+	public static void readWord2pdfBySaveAs(String wordFile, String pdfFile) {
+		try {
+			/**
+			 * 目前支持doc和docx 不同格式的word关键字位置不同，根据实际情况调整关键字位置。我们以docx为准
+			 * D:\\FileStamp.exe 需要执行的exe文件存放的位置
+			 * D:\\test.docx  需要盖章的文件绝对路径
+			 * D:\\gz.png  公章图片的绝对路径
+			 * D:\\yuanly2.pdf  输出pdf的绝对路径
+			 * 盖章关键字为：{$Stamp}
+			 * 服务器需要安装offace 版本为2007  目前测试2013也可以 具体以实际情况为准
+			 * 常规盖章的关键字需要添加到需要盖章位置上一行或上两行位置，具体根据实际情况酌情调整。
+			 */
+			
+			//输入相关参数
+			String path = EXEPATH +" "+ wordFile +" "+ IMGPATH +" "+ pdfFile;
+			//调用cmd命令行
+			Runtime run = Runtime.getRuntime();
+			//执行具体命令行参考资料：http://www.cnblogs.com/happyPawpaw/p/3740903.html
+			//调用完成后按照传入路径直接生成pdf
+			Process process = run.exec("cmd.exe /c "+path);
+			//获取执行结果感觉不需要可以取消
+//			InputStream in = process.getInputStream();
+//			while (in.read() != -1) {
+//				System.out.println(in.read());
+//				System.out.println("OK!");
+//			}
+//			in.close();
+			process.waitFor();
+		} catch (Exception e) {  
+			e.printStackTrace();
+			System.out.println("Error!");
+		}
+	}
+	
+	public static String getStringByBase64_2(String base64Str){
+		byte[] bt = null;
+		//解码
+		try {
+			sun.misc.BASE64Decoder decoder = new sun.misc.BASE64Decoder();  
+			bt = decoder.decodeBuffer(base64Str);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		//1.将传过来的base64字符串写成word文档
+		String tempFileName = createFileName();
+		//生成word路径
+		String wordFile = AddSealServiceImpl.FILEPATH+tempFileName;
+		getFile(bt, wordFile);
+		//2.将word文档转成pdf
+		String pdfFile = AddSealServiceImpl.FILEPATH+tempFileName.substring(0, tempFileName.indexOf("."))+".pdf";
+		String targetPath = AddSealServiceImpl.FILEPATH+tempFileName.substring(0, tempFileName.indexOf("."))+"_add_pic.pdf";
+		MyFileConvertUtils.word2pdfBySaveAs(wordFile, pdfFile);
+		//3.在pdf文档中的指定位置加入图片
+		PdfUtils.addPicToPdf(pdfFile, targetPath, IMGPATH);
+		//4.将pdf转成base64字符串返回
+		File file = new File(targetPath);
+		String resultStr = PDFToBase64(file);
+		
+		return resultStr;
+	}
+	
+
+	@Override
+	public String addSeal(String base64Str) {
+//		String result = getStringByBase64(base64Str);
+//		String result = getStringByBase64_2(base64Str);
+		String result = getStringByBase64_TG(base64Str);
+		return result;
+	}
+	
+	private static String getStringByBase64_TG(String base64Str) {
+		byte[] bt = null;
+		//解码
+		try {
+			sun.misc.BASE64Decoder decoder = new sun.misc.BASE64Decoder();  
+			bt = decoder.decodeBuffer(base64Str);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		//1.将传过来的base64字符串写成word文档
+		String tempFileName = createFileName();
+		//生成word路径
+		String wordFile = AddSealServiceImpl.FILEPATH+tempFileName;
+		getFile(bt, wordFile);
+		//2.将word文档转成pdf
+		String pdfFile = AddSealServiceImpl.FILEPATH+tempFileName.substring(0, tempFileName.indexOf("."))+".pdf";
+		String targetPath = AddSealServiceImpl.FILEPATH+tempFileName.substring(0, tempFileName.indexOf("."))+"_add_pic.pdf";
+		MyFileConvertUtils.word2pdfBySaveAs(wordFile, pdfFile);
+		//3.在pdf文档中的指定位置加入图片和文字
+		PdfTGSign.addSignToPdf(pdfFile, targetPath);
+		//4.将pdf转成base64字符串返回
+		File file = new File(targetPath);
+		String resultStr = PDFToBase64(file);
+		return resultStr;
+	}
+}
