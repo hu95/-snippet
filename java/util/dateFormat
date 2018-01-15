@@ -1,0 +1,269 @@
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+
+/**
+ * 对日期的格式化操作
+ * @author
+ *
+ */
+public class DateFormat {
+	/**
+	 * 默认日期格式
+	 */
+	public static String DEFAULT_FORMAT = "yyyy-MM-dd";
+
+	/**
+	 * 测试主方法
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		for(int i = 1951;i < 1960;i++){
+			System.out.println(getCurrYearFirst(i));
+			System.out.println(getCurrYearLast(i));
+			System.out.println(formatDate(getCurrYearFirst(i)));
+			System.out.println(formatDate(getCurrYearLast(i)));
+		}
+
+	}
+	
+	/**
+	 * 格式化日期
+	 * @param date 日期对象
+	 * @return String 日期字符串
+	 */
+	public static String formatDate(Date date){
+		SimpleDateFormat sdf = new SimpleDateFormat(DEFAULT_FORMAT);
+		String sDate = sdf.format(date);
+		return sDate;
+	}
+	
+	/**
+	 * 格式化字符串
+	 * @param String 日期字符串
+	 * @return Date 日期对象
+	 * @throws Exception
+	 */
+	public static Date parseString(String date)throws Exception{
+		//String str = "2012-1-13 17:26:33";
+		SimpleDateFormat sdf = new SimpleDateFormat(DEFAULT_FORMAT);
+		Date today = sdf.parse(date);
+		return today;
+	}
+	
+	/**
+	 * 获取当前年份
+	 * @return Integer 当前年份
+	 */
+	public static Integer getCurrYear(){
+		Calendar calendar = Calendar.getInstance();
+		return calendar.get(Calendar.YEAR);
+	}
+	
+	/**
+	 * 获取当前月份
+	 * @return Integer 当前月份
+	 */
+	public static Integer getCurrMonth(){
+		Calendar calendar = Calendar.getInstance();
+		return calendar.get(Calendar.MONTH) + 1;
+	}
+	
+	/**
+	 * 获取当前日
+	 * @return Integer 当前日
+	 */
+	public static Integer getCurrDay(){
+		Calendar calendar = Calendar.getInstance();
+		return calendar.get(Calendar.DAY_OF_MONTH);
+	}
+	
+	/**
+	 * 获取某年第一天日期
+	 * @param year 年份
+	 * @return Date
+	 */
+	public static Date getCurrYearFirst(int year){
+		Calendar calendar = Calendar.getInstance();
+		calendar.clear();
+		calendar.set(Calendar.YEAR, year);
+		Date currYearFirst = calendar.getTime();
+		return currYearFirst;
+	}
+	
+	/**
+	 * 获取某年最后一天日期
+	 * @param year 年份
+	 * @return Date
+	 */
+	public static Date getCurrYearLast(int year){
+		Calendar calendar = Calendar.getInstance();
+		calendar.clear();
+		calendar.set(Calendar.YEAR, year);
+		calendar.roll(Calendar.DAY_OF_YEAR, -1);
+		Date currYearLast = calendar.getTime();
+		
+		return currYearLast;
+	}
+	
+	// 获得当前日期与本周一相差的天数
+	public static int getMondayPlus() {
+		Calendar cd = Calendar.getInstance();
+		// 获得今天是一周的第几天，星期日是第一天，星期二是第二天......
+		int dayOfWeek = cd.get(Calendar.DAY_OF_WEEK);
+		if (dayOfWeek == 1) {
+			return -6;
+		} else {
+			return 2 - dayOfWeek;
+		}
+	}
+	
+	// 获得本周星期一的日期
+	public static String getCurrentMonday() {
+		int weeks = 0;
+		int mondayPlus = getMondayPlus();
+		GregorianCalendar currentDate = new GregorianCalendar();
+		currentDate.add(GregorianCalendar.DATE, mondayPlus);
+		Date monday = currentDate.getTime();
+		SimpleDateFormat sdf = new SimpleDateFormat(DEFAULT_FORMAT);
+		String preMonday = sdf.format(monday);
+		return preMonday;
+	}
+	
+	/*****************************************
+	* @功能     判断某年是否为闰年
+	* @return  boolean
+	* @throws ParseException
+	****************************************/
+	public static boolean isLeapYear(int yearNum){
+		boolean isLeep = false;
+		/**判断是否为闰年，赋值给一标识符flag*/
+		if((yearNum % 4 == 0) && (yearNum % 100 != 0)){
+		isLeep = true;
+		}  else if(yearNum % 400 ==0){
+		isLeep = true;
+		} else {
+		isLeep = false;
+		}
+		return isLeep;
+	}
+	
+	/*****************************************
+	* @功能     计算当前日期某年的第几周
+	* @return  interger
+	* @throws ParseException
+	****************************************/
+	public static int getWeekNumOfYear(){
+		Calendar calendar = Calendar.getInstance();
+		int iWeekNum = calendar.get(Calendar.WEEK_OF_YEAR);
+		return iWeekNum;
+	}
+	
+    /*****************************************
+	* @功能     计算指定日期某年的第几周
+	* @return  interger
+	* @throws ParseException
+	****************************************/
+	public static int getWeekNumOfYearDay(String strDate ) throws ParseException{
+		Calendar calendar = Calendar.getInstance();
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+		Date curDate = format.parse(strDate);
+		calendar.setTime(curDate);
+		int iWeekNum = calendar.get(Calendar.WEEK_OF_YEAR);
+		return iWeekNum;
+	}
+	
+	/*****************************************
+	* @功能     计算某年某周的开始日期
+	* @return  interger
+	* @throws ParseException
+	****************************************/
+	public static String getYearWeekFirstDay(int yearNum,int weekNum) throws ParseException {
+		Calendar cal = Calendar.getInstance();
+		cal.set(Calendar.YEAR, yearNum);
+		cal.set(Calendar.WEEK_OF_YEAR, weekNum);
+		cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+		//分别取得当前日期的年、月、日
+		String tempYear = Integer.toString(yearNum);
+		String tempMonth = Integer.toString(cal.get(Calendar.MONTH) + 1);
+		String tempDay = Integer.toString(cal.get(Calendar.DATE));
+		String tempDate = tempYear + "-" +tempMonth + "-" + tempDay;
+		return SetDateFormat(tempDate,"yyyy-MM-dd");
+	}
+
+	/*****************************************
+	* @功能     计算某年某周的结束日期
+	* @return  interger
+	* @throws ParseException
+	****************************************/
+	public static String getYearWeekEndDay(int yearNum,int weekNum) throws ParseException {
+		Calendar cal = Calendar.getInstance();
+		cal.set(Calendar.YEAR, yearNum);
+		cal.set(Calendar.WEEK_OF_YEAR, weekNum + 1);
+		cal.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY);
+		//分别取得当前日期的年、月、日
+		String tempYear = Integer.toString(yearNum);
+		String tempMonth = Integer.toString(cal.get(Calendar.MONTH) + 1);
+		String tempDay = Integer.toString(cal.get(Calendar.DATE));
+		String tempDate = tempYear + "-" +tempMonth + "-" + tempDay;
+		return SetDateFormat(tempDate,"yyyy-MM-dd");
+	}
+
+
+	/*****************************************
+	* @功能     计算某年某月的开始日期
+	* @return  interger
+	* @throws ParseException
+	****************************************/
+	public static String getYearMonthFirstDay(int yearNum,int monthNum) throws ParseException {
+		//分别取得当前日期的年、月、日
+		String tempYear = Integer.toString(yearNum);
+		String tempMonth = Integer.toString(monthNum);
+		String tempDay = "1";
+		String tempDate = tempYear + "-" +tempMonth + "-" + tempDay;
+		return SetDateFormat(tempDate,"yyyy-MM-dd");
+	}
+	
+	/*****************************************
+	* @功能     计算某年某月的结束日期
+	* @return  interger
+	* @throws ParseException
+	****************************************/
+	public static String getYearMonthEndDay(int yearNum,int monthNum) throws ParseException {
+		//分别取得当前日期的年、月、日
+		String tempYear = Integer.toString(yearNum);
+		String tempMonth = Integer.toString(monthNum);
+		String tempDay = "31";
+		if (tempMonth.equals("1") || tempMonth.equals("3") || tempMonth.equals("5") || tempMonth.equals("7") ||tempMonth.equals("8") || tempMonth.equals("10") ||tempMonth.equals("12")) {
+			tempDay = "31";
+		}
+		if (tempMonth.equals("4") || tempMonth.equals("6") || tempMonth.equals("9")||tempMonth.equals("11")) {
+			tempDay = "30";
+		}
+		if (tempMonth.equals("2")) {
+			if (isLeapYear(yearNum)) {
+				tempDay = "29";
+			} else {
+				tempDay = "28";
+			}
+		}
+		//System.out.println("tempDay:" + tempDay);
+		String tempDate = tempYear + "-" +tempMonth + "-" + tempDay;
+		return SetDateFormat(tempDate,"yyyy-MM-dd");
+	}
+	
+	/**
+	* @see     取得指定时间的给定格式()
+	* @return String
+	* @throws ParseException
+	*/
+	public static String SetDateFormat(String myDate,String strFormat) throws ParseException
+	{
+		SimpleDateFormat sdf = new SimpleDateFormat(strFormat);
+		String sDate = sdf.format(sdf.parse(myDate));
+		System.err.println(sDate);
+		return sDate;
+	}
+}
