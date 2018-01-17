@@ -1,0 +1,4 @@
+.layui-table tr th ,
+		.layui-table tr td {
+			text-align: center;
+		}
