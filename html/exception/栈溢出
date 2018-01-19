@@ -1,0 +1,6 @@
+Uncaught RangeError: Maximum call stack size exceeded
+一直用自己的方法
+function a(){
+  a();
+}
+http://stackoverflow.com/questions/6095530/maximum-call-stack-size-exceeded-error
