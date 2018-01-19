@@ -1,0 +1,4 @@
+//这里可以在浏览器
+<link rel="icon" href="favicon.ico">
+<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+是定义站点的icon图标，跟网页中的图片有本质上的区别，icon是显示在地址栏最前面的一个16*16的小图标
