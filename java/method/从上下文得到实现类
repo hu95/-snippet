@@ -1,0 +1,37 @@
+CLASS extends HttpServlet
+//Servlet的框架是由两个Java包组成:javax.servlet和javax.servlet.http. 在javax.servlet包中定义了所有的Servlet类都必须实现或扩展的的通用接口和类.在javax.servlet.http包中定义了采用HTTP通信协议的HttpServlet类.
+
+//Servlet的框架的核心是javax.servlet.Servlet接口,所有的Servlet都必须实现这一接口.在Servlet接口中定义了5个方法,其中有3个方法代表了Servlet的声明周期:
+
+//init方法,负责初始化Servlet对象
+//service方法,负责相应客户的请求
+//destory方法,当Servlet对象退出声明周期时,负责释放占有的资源
+
+//void init(ServletConfit config)throws ServletException     在servlet被载入后和实施服务前由servlet引擎进行一次性调用。如果init()产生溢出UnavailableException，则 servle退出服务。
+//ServletConfig getServletConfig()     返回传递到servlet的init()方法的ServletConfig对象
+//void service(ServletRequest request, ServletResponse response)throws ServletException,IOException     处理request对象中描述的请求，使用response对象返回请求结果
+//String getServletInfo()         返回描述servlet的一个字符串
+//void destory()         当servlet将要卸载时由servlet引擎调用，销毁Servlet实例
+//doGet
+public void init(ServletConfig config) throws ServletException {
+		WebApplicationContext wac = WebApplicationContextUtils.getRequiredWebApplicationContext(config.getServletContext());
+//	WebApplicationContextUtils是一个抽象类，其提供了一个很便利的方法来获取spring应用的上下文即WebApplicationContext。
+//	其中的静态方法getWebApplicationContext(ServletContext sc)，提供一个ServletContext 类型参数即可。
+//
+//	其原理十分简单，在spring容器初始化的方法org.springframework.web.context.ContextLoader.initWebApplicationContext(ServletContext)中
+//
+//	通过servletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, this.context);已经将WebApplicationContext的实例放入ServletContext 中了。
+//
+//	然后在工具类的org.springframework.web.context.support.WebApplicationContextUtils.getWebApplicationContext(ServletContext)中就可以通过传入的ServletContext参数获取到WebApplicationContext实例了。
+
+    
+	
+		coreAccountService = (ICoreAccountService) wac.getBean("coreAccountServiceImpl");
+//Spring通过资源加载器加载相应的XML文件，使用读取器读取资源加载器中的文件到读取器中，在读取过程中，解析相应的xml文件元素，转化为spring定义的数据结BeanDefinition，把相应的BeanDefinition注册到注册表中。注册表中包含的BeanDefinition的数据结构，没有经过加工处理过，无法得到我们想要的bean对象。
+//我们如何得到Bean对象，spring都做了那些工作？BeanFactory提供了多种方式得到bean对象，getBean()方法是最核心得到bean对象
+//getBean主要由AbstractBeanFactory、AbstractAutowireCapableBeanFactory、以及DefaultListableBeanFactory实现
+//AbstractBeanFactory 实现了依赖关系处理
+//AbstractAutowireCapableBeanFactory 实现了bean的create过程
+//DefaultListableBeanFactory 实现了BeanDefinition的管理
+	
+	}
