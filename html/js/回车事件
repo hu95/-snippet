@@ -1,0 +1,23 @@
+一、页面加载完成后就添加该事件
+//给enter键添加事件
+$(document).ready(function(e) {
+  $(this).keydown(function (e){
+      if(e.which == "13"){
+      showSelectResult();//触发该事件
+      } 
+   })
+});
+二、为某元素添加
+<script> 
+$(function(){ 
+   $(document).keydown(function(event){ 
+    if(event.keyCode==13){ 
+      $("#mouse").click(); 
+    } 
+  }); 
+
+  $("#mouse").click(function(){ 
+    alert("nihao"); 
+   }); 
+ }) 
+</script> 
