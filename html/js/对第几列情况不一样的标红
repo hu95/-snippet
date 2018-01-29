@@ -6,7 +6,7 @@ function findDifficult(){
 		if(rowslength==1||rowslength==2){
 			return;
 		}
-		for(var i=2;i<cellsslength;i++){//列
+		for(var i=1;i<cellsslength;i++){//列
 			for(var j=2;j<rowslength;j++){//行
 				if($("table").find("tr").eq(1).find("td").eq(i).text()!=$("table").find("tr").eq(j).find("td").eq(i).text()){
 					$("table tr td:nth-child("+(i+1)+")").css({color:"red"});
