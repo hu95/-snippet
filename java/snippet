@@ -1,4 +1,12 @@
 1.<context:component-scan base-package="com.risen.*.common" />
 扫描包
 2.注解
-@
+    @Aspect 加在类前
+    方法前用：
+        @Before：方法前执行 
+        @AfterReturning：运行方法后执行 
+        @AfterThrowing：Throw后执行 
+        @After：无论方法以何种方式结束，都会执行（类似于finally） 
+        @Around：环绕执行
+    @Order（100） 安全功能，Ordered.HIGHEST_PRECEDENCE
+    @
