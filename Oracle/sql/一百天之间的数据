@@ -1,0 +1,4 @@
+select to_char(t.inte_log_cdate, 'yyyy-MM-dd') ,count(*)
+from sjzx_interface_log t
+group by to_char(t.inte_log_cdate, 'yyyy-MM-dd')
+having to_date(to_char(t.inte_log_cdate, 'yyyy-MM-dd'), 'yyyy-MM-dd') > (select  sysdate - interval '99' day  from dual )
