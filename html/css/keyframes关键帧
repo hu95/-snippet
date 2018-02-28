@@ -12,3 +12,19 @@
 .dq_circle_box .dq_circle_bg1{
     animation: rotateClockZoomIn 2s infinite linear;
 }
+
+语法结构:
+
+@keyframes animationname {keyframes-selector {css-styles;}}
+参数解析:
+1.animationname:声明动画的名称。
+2.keyframes-selector:用来划分动画的时长，可以使用百分比形式，也可以使用 "from" 和 "to"的形式。
+"from" 和 "to"的形式等价于 0% 和 100%。
+建议始终使用百分比形式。
+
+-webkit-transform：none | 类型
+类型：scale：缩放，1为原始大小。scale(x)。正数放大，负数缩小。属性值为一个时，x/y轴同时缩放；属性值为两个值时，分别控制x、y轴的缩放。
+         rotate：水平旋转，属性值格式为Xdeg。(deg是“度”的意思)rotate(Xdeg)。X为正数时，顺时针旋转；为负数时，逆时针旋转
+         translate：平移，基于XY轴重新定位元素。translate(Xpx,Ypx)。属性值为一个时，x、y轴参数相同；为两个时，x、y轴分别定位
+         skew：将元素沿水平方向倾斜变形。skew(Xdeg,Ydeg)。这个比较难表述，想象一下平行四边形吧。属性值为一个时，x、y轴参数相同；为两个时，x、y轴各自倾斜
+         matrix：矩阵
