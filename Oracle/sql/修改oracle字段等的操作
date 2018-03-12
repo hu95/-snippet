@@ -1,2 +1,7 @@
 使用rename关键字来实现字段名的修改:alter table 表名 rename column旧的字段名 to 新的字段名名;
 使用modify关键字来实现对数据类型的修改:alter table 表名 modify 字段名 数据类型;
+ALTER TABLE SCOTT.TEST RENAME TO TEST1--修改表名
+ALTER TABLE SCOTT.TEST RENAME COLUMN NAME TO NAME1 --修改表列名
+ALTER TABLE SCOTT.TEST MODIFY NAME1 NUMBER(20) --修改字段类型
+ALTER TABLE SCOTT.TEST ADD ADDRESS VARCHAR2(40) --添加表列
+ALTER TABLE SCOTT.TEST DROP NAME CASCADECONSTRAINTS --删除表列
