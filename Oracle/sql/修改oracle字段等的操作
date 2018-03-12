@@ -1,0 +1,2 @@
+使用rename关键字来实现字段名的修改:alter table 表名 rename column旧的字段名 to 新的字段名名;
+使用modify关键字来实现对数据类型的修改:alter table 表名 modify 字段名 数据类型;
