@@ -1,0 +1,20 @@
+--游标--列表
+create or replace procedure proc_updateScr_unit
+as
+    CURSOR shareList is select crorg_full_name name, allCount,todayCounts from  
+        (select cract_crorg_uuid, sum(oneUnit) allCount ,sum(todayCount) todayCounts from  
+        (select intekey_accountuuid, oneUnit ,todayCount from (select l1.inte_log_key, oneUnit, nvl(today, 0) todayCount from  
+        (select inte_log_key, count(*) oneUnit from synon_inte_log group by inte_log_key) l1 left join  
+        (select inte_log_key, count(*) today  from synon_inte_log where to_char(inte_log_cdate, 'yyyy-MM') =   
+        to_char(sysdate, 'yyyy-MM') group by inte_log_key) l2  on l1.inte_log_key = l2.inte_log_key ),  
+        synon_inte_key where inte_log_key = intekey_key), syninte_core_account where intekey_accountuuid = cract_uuid and cract_cusr!='0' 
+         group by cract_crorg_uuid), syninte_core_organization where crorg_uuid = cract_crorg_uuid ; 
+    
+  begin
+   delete from screen_home_unit;
+  FOR vso IN shareList LOOP
+        insert into screen_home_unit values(next.nextval,sys_guid(),sysdate,sysdate,vso.name,vso.todayCounts,vso.allCount,1);
+        dbms_output.put_line(vso.name);
+   END LOOP;
+   commit;
+END;
