@@ -1,0 +1,24 @@
+create or replace procedure proc_updateScr_sum_sum as
+  onetablecount number;
+  allcount      number; --总条数
+  l_cur         VARCHAR2(4000);
+  CURSOR codelist is
+    select cata_code code from sjzx_catalog where cata_checkstatus = '5';
+begin
+  FOR vso IN codelist LOOP
+    begin
+    l_cur := ' select count(1) from ' || vso.code;
+    execute immediate l_cur
+      into onetablecount;
+dbms_output.put_line(l_cur);
+allcount := allcount + onetablecount; 
+dbms_output.put_line(allcount);
+ EXCEPTION
+WHEN OTHERS THEN
+DBMS_OUTPUT.put_line('sqlcode : ' ||sqlcode);
+DBMS_OUTPUT.put_line('sqlerrm : ' ||sqlerrm);
+           
+end;
+
+END LOOP;
+END;
