@@ -1,0 +1,4 @@
+在存储过程中访问公共同义词，必须直接对用户授权，而不能通过角色授权：
+select 'grant select on '||t.synonym_name||' to public;'  from all_synonyms t where t.owner=upper('用户名');
+
+grant select on SYNON_INTE_THIRDPARTY to public;
