@@ -1,3 +1,10 @@
+--创建db_link语句
+create database link dq_db_link connect to dqsjcj identified by dqsjcj using '192.168.4.131:1521/orcl';
+
+--创建同义词
+create synonym synon_base_population for dqsjcj.base_population@dq_db_link;
+
+
 在存储过程中访问公共同义词，必须直接对用户授权，而不能通过角色授权：
 select 'grant select on '||t.synonym_name||' to public;'  from all_synonyms t where t.owner=upper('用户名');
 
