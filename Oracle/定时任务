@@ -1,0 +1,7 @@
+declare  
+begin  
+  --sys.dbms_job.isubmit(14,'insertinto_intelog;', sysdate, 'sysdate+4/(1440*60)',false);
+
+ dbms_job.remove(14);
+ commit;
+end; 
