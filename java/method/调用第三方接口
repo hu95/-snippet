@@ -1,0 +1,130 @@
+1.HttpClient
+public String exeCiInte(String url, Map<String, String> map) throws Exception{
+		org.apache.commons.httpclient.HttpClient client = new org.apache.commons.httpclient.HttpClient();
+		PostMethod post = new PostMethod(url);
+		post.getParams().setParameter(HttpMethodParams.HTTP_CONTENT_CHARSET, "UTF-8");
+		Part[] parts= new Part[map.size()];
+		int mapindex=0;
+		for (Map.Entry<String, String> entry : map.entrySet()) {
+			System.out.println("key= " + entry.getKey() + " and value= " + entry.getValue());
+			parts[mapindex++] = new StringPart(entry.getKey() , entry.getValue(),"UTF-8");
+		}
+		//填充参数
+		post.setRequestEntity(new MultipartRequestEntity(parts, post.getParams()));
+		String response="";
+		int statusCode = 0;
+		try {
+			statusCode = client.executeMethod(post); // 发送请求
+			System.out.println(statusCode);//http请求状态码
+			response = IOUtils.toString(post.getResponseBodyAsStream(),"UTF-8");
+			//打印返回的信息
+			System.out.println("服务器返回:\r\n"+response);
+		} catch (IOException e) {
+			response="{\"msg\": \"访问失败！\",\"code\":\""+statusCode+"\"}";
+		}finally {
+			post.releaseConnection();
+		}
+		return response;
+	}
+  2.HttpURLConnection
+  public JSONObject exeInte(String urlStr, Map paramMap){
+		JSONObject json = null;
+		 try {
+			 URL url = new URL(urlStr);  
+			 // 将url 以 open方法返回的urlConnection  连接强转为HttpURLConnection连接  (标识一个url所引用的远程对象连接)  
+			 HttpURLConnection connection = (HttpURLConnection) url.openConnection();// 此时cnnection只是为一个连接对象,待连接中  
+			 // 设置连接输出流为true,默认false (post 请求是以流的方式隐式的传递参数)  
+			 connection.setDoOutput(true);
+			 // 设置连接输入流为true 
+			 connection.setDoInput(true);
+			 // 设置请求方式为post  
+			 connection.setRequestMethod("POST");
+			 // post请求缓存设为false  
+			 connection.setUseCaches(false);  
+			 // 设置该HttpURLConnection实例是否自动执行重定向  
+			 connection.setInstanceFollowRedirects(true);  
+			 // 设置请求头里面的各个属性 (以下为设置内容的类型,设置为经过urlEncoded编码过的from参数)  
+			 // application/x-javascript text/xml->xml数据 application/x-javascript->json对象 application/x-www-form-urlencoded->表单数据  
+			 connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");  
+			 // 建立连接 (请求未开始,直到connection.getInputStream()方法调用时才发起,以上各个参数设置需在此方法之前进行)  
+			 connection.connect();  
+			 // 创建输入输出流,用于往连接里面输出携带的参数,(输出内容为?后面的内容)  
+			 DataOutputStream dataout = new DataOutputStream(connection.getOutputStream());
+			 String paramStr = "";
+			if(paramMap!=null){
+				for (Object key : paramMap.keySet()) {
+					String value = (String) paramMap.get(key);
+					paramStr = paramStr + key + "=" + URLEncoder.encode(value, "utf-8") + "&";
+				}
+			}
+			 //String parm = "storeId=" + URLEncoder.encode("中国", "utf-8"); //URLEncoder.encode()方法  为字符串进行编码  
+			 // 将参数输出到连接  
+			 dataout.writeBytes(paramStr);  
+			 // 输出完成后刷新并关闭流  
+			 dataout.flush();  
+			 dataout.close(); // 重要且易忽略步骤 (关闭流,切记!)   
+			 System.out.println(connection.getResponseCode());  
+			 // 连接发起请求,处理服务器响应  (从连接获取到输入流并包装为bufferedReader) 
+			 BufferedReader bf = null;   
+			 String line;  
+			 StringBuilder sb = new StringBuilder(); // 用来存储响应数据
+			 if(connection.getResponseCode()==200){
+				 bf = new BufferedReader(new InputStreamReader(connection.getInputStream(),"utf-8"));
+				// 循环读取流,若不到结尾处  
+				 while ((line = bf.readLine()) != null) {  
+					 sb.append(line);  
+				 }
+			 }else{
+				 sb.append("{\"msg\": \"访问失败！\",\"code\":\""+connection.getResponseCode()+"\"}");
+			 }
+			 if(bf!=null)
+				 bf.close();    // 重要且易忽略步骤 (关闭流,切记!)   
+			 connection.disconnect(); // 销毁连接  
+			 //System.out.println(sb.toString());  
+			 json = new JSONObject(sb.toString());
+		} catch (Exception e) {  
+			 e.printStackTrace();  
+		}
+		return json;
+
+	}
+  3.RPCServiceClient 
+RPCServiceClient  serviceClient = new RPCServiceClient();
+Options options = serviceClient.getOptions();
+options.setProperty(HTTPConstants.CONNECTION_TIMEOUT, 60000);
+options.setProperty(HTTPConstants.SO_TIMEOUT, 60000);
+options.setProperty(HTTPConstants.CHUNKED, "false");
+String fgNamespace = "";
+
+String localPart="";
+String fgLocalPart = "autoSelectCD";//
+//全局控制
+localPart="autoSelectCD";
+//指定域名，掉用方法
+QName qname = new QName(fgNamespace, localPart);
+//传输的参数
+OMElement element=null;
+if("autoSelectCD".equals(localPart)){
+String url="";
+//服务器端地址
+EndpointReference targetEPR = new EndpointReference(url);
+options.setTo(targetEPR);
+String xml = "<?xml version=\"1.0\" encoding=\"gb2312\"?>" +
+	"<CDUserList>" +
+	"<Users>" +
+	"<Name>姓名</Name>" +
+	"<CID1>身份证号</CID1>" +
+	"</Users>" +
+	"</CDUserList>";
+
+String jyw = Descbc.desAcdxml(xml, "D:\\aapdftemp\\4.iso");
+System.out.println(jyw);
+
+//使用了RPCServiceClient类的invokeBlocking方法调用了WebService中的方法。invokeBlocking方法有三个参数，
+//其中第一个参数的类型是QName对象，表示要调用的方法名；第二个参数表示要调用的WebService方法的参数值，参数类型为Object[]；
+//第三个参数表示WebService方法的返回值类型的Class对象，参数类型为Class[]。
+//当方法没有参数时，invokeBlocking方法的第二个参数值不能是null，而要使用new Object[]{}。
+element = serviceClient.invokeBlocking(qname, new Object[]{"pdf", "all", "123456", "4", "liwj", xml, jyw});
+													//lx,area,ywbh,cddw,cdr,acdxml,name,cid1,jyw                         
+}
+String retResult = element.getFirstElement().getText();
