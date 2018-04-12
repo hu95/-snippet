@@ -1,0 +1,7 @@
+select *
+  from core_organization t
+ -- where t.unorg_type in ('1','10','3')
+ start with t.crorg_level_code = '00'
+connect by prior t.crorg_uuid = t.crorg_parent_uuid
+
+start with （从何节点） connect by prior 开始至子节点/父节点
