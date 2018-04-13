@@ -1,0 +1,8 @@
+#！/bin/bash
+#更新软件库
+apt-get update
+#升级软件
+apt-get upgrade
+#安装ubuntu桌面系统
+apt-get install ubuntu-desktop
+#到图形页面
