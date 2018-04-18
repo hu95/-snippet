@@ -1,0 +1,189 @@
+JAVA基础知识之Collections工具类
+
+排序操作
+Collections提供以下方法对List进行排序操作
+
+void reverse(List list)：反转
+
+void shuffle(List list),随机排序
+
+void sort(List list),按自然排序的升序排序
+
+void sort(List list, Comparator c);定制排序，由Comparator控制排序逻辑
+
+void swap(List list, int i , int j),交换两个索引位置的元素
+
+void rotate(List list, int distance),旋转。当distance为正数时，将list后distance个元素整体移到前面。当distance为负数时，将 list的前distance个元素整体移到后面。
+
+下面简单演示Collections操作List
+
+复制代码
+ 1 package collection;
+ 2 
+ 3 import java.util.ArrayList;
+ 4 import java.util.Collections;
+ 5 import java.util.Comparator;
+ 6 
+ 7 public class CollectionsTest {
+ 8     public static void main(String[] args) {
+ 9         ArrayList nums =  new ArrayList();
+10         nums.add(8);
+11         nums.add(-3);
+12         nums.add(2);
+13         nums.add(9);
+14         nums.add(-2);
+15         System.out.println(nums);
+16         Collections.reverse(nums);
+17         System.out.println(nums);
+18         Collections.sort(nums);
+19         System.out.println(nums);
+20         Collections.shuffle(nums);
+21         System.out.println(nums);
+22         //下面只是为了演示定制排序的用法，将int类型转成string进行比较
+23         Collections.sort(nums, new Comparator() {
+24             
+25             @Override
+26             public int compare(Object o1, Object o2) {
+27                 // TODO Auto-generated method stub
+28                 String s1 = String.valueOf(o1);
+29                 String s2 = String.valueOf(o2);
+30                 return s1.compareTo(s2);
+31             }
+32             
+33         });
+34         System.out.println(nums);
+35     }
+36 }
+复制代码
+执行结果，
+
+1 [8, -3, 2, 9, -2]
+2 [-2, 9, 2, -3, 8]
+3 [-3, -2, 2, 8, 9]
+4 [9, -2, 8, 2, -3]
+5 [-2, -3, 2, 8, 9]
+查找，替换操作
+int binarySearch(List list, Object key), 对List进行二分查找，返回索引，注意List必须是有序的
+
+int max(Collection coll),根据元素的自然顺序，返回最大的元素。 类比int min(Collection coll)
+
+int max(Collection coll, Comparator c)，根据定制排序，返回最大元素，排序规则由Comparatator类控制。类比int min(Collection coll, Comparator c)
+
+void fill(List list, Object obj),用元素obj填充list中所有元素
+
+int frequency(Collection c, Object o)，统计元素出现次数
+
+int indexOfSubList(List list, List target), 统计targe在list中第一次出现的索引，找不到则返回-1，类比int lastIndexOfSubList(List source, list target).
+
+boolean replaceAll(List list, Object oldVal, Object newVal), 用新元素替换旧元素。
+
+下面示范简单用法，
+
+复制代码
+ 1 package collection.collections;
+ 2 
+ 3 import java.util.ArrayList;
+ 4 import java.util.Collections;
+ 5 
+ 6 public class CollectionsTest {
+ 7     public static void main(String[] args) {
+ 8         ArrayList num =  new ArrayList();
+ 9         num.add(3);
+10         num.add(-1);
+11         num.add(-5);
+12         num.add(10);
+13         System.out.println(num);
+14         System.out.println(Collections.max(num));
+15         System.out.println(Collections.min(num));
+16         Collections.replaceAll(num, -1, -7);
+17         System.out.println(Collections.frequency(num, 3));
+18         Collections.sort(num);
+19         System.out.println(Collections.binarySearch(num, -5));
+20     }
+21 }
+复制代码
+ 
+
+执行结果，
+
+1 [3, -1, -5, 10]
+2 10
+3 -5
+4 1
+5 1
+ 
+
+同步控制
+Collections中几乎对每个集合都定义了同步控制方法，例如 SynchronizedList(), SynchronizedSet()等方法，来将集合包装成线程安全的集合。下面是Collections将普通集合包装成线程安全集合的用法，
+
+复制代码
+ 1 package collection.collections;
+ 2 
+ 3 import java.util.ArrayList;
+ 4 import java.util.Collection;
+ 5 import java.util.Collections;
+ 6 import java.util.HashMap;
+ 7 import java.util.HashSet;
+ 8 import java.util.List;
+ 9 import java.util.Map;
+10 import java.util.Set;
+11 
+12 public class SynchronizedTest {
+13     public static void main(String[] args) {
+14         Collection c = Collections.synchronizedCollection(new ArrayList());
+15         List list = Collections.synchronizedList(new ArrayList());
+16         Set s = Collections.synchronizedSet(new HashSet());
+17         Map m = Collections.synchronizedMap(new HashMap());
+18     }
+19 }
+复制代码
+ 
+
+设置不可变（只读）集合
+
+Collections提供了三类方法返回一个不可变集合，
+
+emptyXXX(),返回一个空的只读集合（这不知用意何在？）
+
+singleXXX()，返回一个只包含指定对象，只有一个元素，只读的集合。
+
+unmodifiablleXXX()，返回指定集合对象的只读视图。
+
+用法如下，
+
+复制代码
+ 1 package collection.collections;
+ 2 
+ 3 import java.util.Collection;
+ 4 import java.util.Collections;
+ 5 import java.util.HashMap;
+ 6 import java.util.List;
+ 7 import java.util.Map;
+ 8 import java.util.Set;
+ 9 
+10 public class UnmodifiableCollection {
+11     public static void main(String[] args) {
+12         List lt = Collections.emptyList();
+13         Set st = Collections.singleton("avs");
+14         
+15         Map mp = new HashMap();
+16         mp.put("a",100);
+17         mp.put("b", 200);
+18         mp.put("c",150);
+19         Map readOnlyMap = Collections.unmodifiableMap(mp);
+20         
+21         //下面会报错
+22         lt.add(100);
+23         st.add("sdf");
+24         mp.put("d", 300);
+25     }
+26 }
+复制代码
+ 
+
+ 执行结果，
+
+1 Exception in thread "main" java.lang.UnsupportedOperationException
+2     at java.util.AbstractList.add(Unknown Source)
+3     at java.util.AbstractList.add(Unknown Source)
+4     at collection.collections.UnmodifiableCollection.main(UnmodifiableCollection.java:22)
