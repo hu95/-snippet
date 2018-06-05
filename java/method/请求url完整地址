@@ -1,0 +1,72 @@
+
+http://127.0.0.1:8080/risen/public/risen-api/findPersonInfo.action
+request.getServletPath() 
+request.getPathInfo()
+request.getContextPath()
+request.getRequestURI()
+
+/public/risen-api/findPersonInfo.action
+null
+/risen
+/risen/public/risen-api/findPersonInfo.action
+
+but 
+
+http://127.0.0.1:8080/risen/public/service/risen-api/findPersonInfo.action
+/public/service
+/risen-api/findPersonInfo.action
+/risen
+/risen/public/service/risen-api/findPersonInfo.action
+
+
+所以，我们要获取相对于 request.getContextPath() 的路径，我们可以使用如下的代码：
+
+String uri = request.getServletPath();
+String pathInfo = request.getPathInfo();
+if (pathInfo != null && pathInfo.length() > 0) {
+    uri = uri + pathInfo;
+}
+或者：
+
+String uri = request.getRequestURI();
+String contextPath = request.getContextPath();
+if (contextPath != null && contextPath.length() > 0) {
+    uri = uri.substring(contextPath.length());
+}
+
+
+============================================
+ 2013-02-08 补上一个 Tomcat 自身的实现:
+
+catalina.jar,  DefaultServlet.java
+
+
+protected String getRelativePath(HttpServletRequest request)
+  {
+    if (request.getAttribute("javax.servlet.include.request_uri") != null)
+    {
+      String result = (String)request.getAttribute("javax.servlet.include.path_info");
+      if (result == null) {
+        result = (String)request.getAttribute("javax.servlet.include.servlet_path");
+      } else {
+        result = (String)request.getAttribute("javax.servlet.include.servlet_path") + result;
+      }
+      if ((result == null) || (result.equals(""))) {
+        result = "/";
+      }
+      return result;
+    }
+    String result = request.getPathInfo();
+    if (result == null) {
+      result = request.getServletPath();
+    } else {
+      result = request.getServletPath() + result;
+    }
+    if ((result == null) || (result.equals(""))) {
+      result = "/";
+    }
+    return result;
+  }
+  
+  
+  https://blog.csdn.net/shixhzjy/article/details/8949713
