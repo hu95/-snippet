@@ -1,0 +1,208 @@
+
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.List;
+
+public class TxtToolUtil {
+	/**
+	 * 创建文件
+	 * 
+	 * @param fileName
+	 * @return
+	 */
+	public static boolean createFile(String  filename) {
+		try {
+			File file = new File(filename);
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return true;
+	}
+
+	/**
+	 * 读取TXT内容
+	 * 
+	 * @param file
+	 * @return
+	 */
+	public static String readTxtFile(File file) {
+		String result = "";
+		try {
+			InputStreamReader reader = new InputStreamReader(
+					new FileInputStream(file), "gbk");
+			BufferedReader br = new BufferedReader(reader);
+			String s = null;
+			while ((s = br.readLine()) != null) {
+				result = result + s;
+				System.out.println(s);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+	/**
+	 * 读取TXT内容(小文件（G以下）)
+	 * 
+	 * @param file
+	 * @return
+	 */
+	public static List<String> readFiles(String filePath) {
+		List<String> textList = new ArrayList<String>();
+		try {
+			String encoding = "utf-8";
+			File file = new File(filePath);
+			if (file.isFile() && file.exists()) {
+				InputStreamReader read = new InputStreamReader(
+						new FileInputStream(file), encoding);
+				BufferedReader bufferedReader = new BufferedReader(read);
+				String lineTxt = null;
+				while ((lineTxt = bufferedReader.readLine()) != null) {
+					textList.add(lineTxt);
+				}
+				read.close();
+			} else {
+				System.out.println("文件不存在");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return textList;
+	}
+
+	/**
+	 * 读取TXT内容(大文件（G以上）)
+	 * 
+	 * @param file
+	 * @return
+	 */
+	public static void largeRead(String inFile, String outFile) {
+		RandomAccessFile read = null;
+		try {
+			read = new RandomAccessFile(inFile, "r");
+			RandomAccessFile writer = new RandomAccessFile(outFile, "rw");
+			byte[] b = new byte[200 * 1024 * 1024];
+			while (read.read(b) != -1) {
+				writer.write(b);
+			}
+			writer.close();
+			read.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	//常用写方法
+	public static void writeFile(String destinationPath, String line) throws Exception {  
+		FileWriter fileWriter = new FileWriter(destinationPath, true);
+		BufferedWriter writer = new BufferedWriter(fileWriter);
+		writer.write(line);
+		writer.newLine();
+		writer.flush();
+
+		writer.close();
+		fileWriter.close();
+	}
+
+	/**
+	 * 写入TXT，覆盖原内容
+	 * 
+	 * @param content
+	 * @param fileName
+	 * @return
+	 * @throws Exception
+	 */
+	public static boolean writeTxtFile(String content, File fileName)throws Exception {
+		RandomAccessFile mm = null;
+		boolean flag = false;
+		FileOutputStream fileOutputStream = null;
+		try {
+			fileOutputStream = new FileOutputStream(fileName);
+			fileOutputStream.write(content.getBytes("utf-8"));
+			fileOutputStream.close();
+			flag = true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return flag;
+	}
+
+	/**
+	 * 写入TXT，追加写入
+	 * 
+	 * @param filePath
+	 * @param content
+	 */
+	public static void fileChaseFW(String filePath, String content) {
+		try {
+			// 构造函数中的第二个参数true表示以追加形式写文件
+			FileWriter fw = new FileWriter(filePath, true);
+			fw.write(content);
+			fw.close();
+		} catch (IOException e) {
+			System.out.println("文件写入失败！" + e);
+		}
+	}
+
+	
+	//文件重命名 (源文件，重命名地址)
+	public static boolean reNameTo(String filename,String targetName) {
+		boolean flag=true;
+		File file = new File(filename);
+		if (file.exists()) {
+			flag=file.renameTo(new File(targetName));
+		}
+		return flag;
+	}
+	//获取文件长度（单位 MB）
+	public static long getFileSize(String filename) {
+		File file = new File(filename);
+		if (!file.exists() || !file.isFile()) {
+			//System.out.println("文件不存在");
+			createFile(filename);
+			//return -1;
+		}
+		return file.length()/1024/1024;
+	}
+	public static void main(String[] args) throws Exception {
+		String basePath = "D://";
+		for(int i=0;i<100000000;i++){
+			String sourcefile=basePath+"inteLog.txt";
+			if(TxtToolUtil.getFileSize(sourcefile)>5){
+				TxtToolUtil.reNameTo(sourcefile,basePath+"inteLog"+System.currentTimeMillis()+".txt");
+				TxtToolUtil.createFile(sourcefile);
+			}
+			TxtToolUtil.fileChaseFW(sourcefile,i+"\n");
+		}
+		///System.out.println(basePath+"inteLog.txt");
+	}
+		/*File file = new File("D:\\123.txt");
+		//createFile(file);
+		//readTxtFile(file);
+		//writeTxtFile("我是写入的内容11", file);
+		//for(int i=0;i<100;i++){
+			fileChaseFW("D:\\123.txt", 1+"#$"+1+"\n");
+		//}
+		//reNameTo("D:\\123wu吴.txt");
+		long time=System.currentTimeMillis();
+		
+		long size = getFileSize("D:\\123.txt");
+		long time1=System.currentTimeMillis();
+		System.out.println("java.txt文件大小为: " + size);*/
+		//File file =new  File(pathname);
+	//}
+}
