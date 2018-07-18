@@ -1,0 +1,280 @@
+package com.utils;
+
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.imageio.ImageIO;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
+import org.apache.pdfbox.rendering.PDFRenderer;
+import org.dom4j.Document;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Element;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.XMLWriter;
+
+public class PdfToImage {
+	
+	private static List<Map<String, String>> list =  new ArrayList<Map<String, String>>();
+	
+	public static List<Map<String, String>> getList() {
+		return list;
+	}
+
+	public static void setList(List<Map<String, String>> list) {
+		PdfToImage.list = list;
+	}
+
+	public static void main(String[] args) {  
+		pdf2Image("C:/Users/worK/Desktop/《给孩子讲点历史典故》主编：华商书院少儿国学研究中心.pdf", "D:/pdf3", 50);
+		System.out.println(list.toString());
+		/*try {
+			String str = listtoXml(list);
+			System.out.println(str);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}*/
+    }  
+  
+    /*** 
+     * PDF文件转PNG图片，全部页数 
+     *  
+     * @param PdfFilePath pdf完整路径 
+     * @param imgFilePath 图片存放的文件夹 
+     * @param dpi dpi越大转换后越清晰，相对转换速度越慢 
+     * @return 
+     */  
+    public static void pdf2Image(String PdfFilePath, String dstImgFolder, int dpi) {
+        File file = new File(PdfFilePath);  
+        PDDocument pdDocument;  
+        try {  
+            String imgPDFPath = file.getParent();  
+            int dot = file.getName().lastIndexOf('.');  
+            String imagePDFName = file.getName().substring(0, dot); // 获取图片文件名  
+            String imgFolderPath = "";  
+            if (dstImgFolder.equals("")) {  
+                imgFolderPath = imgPDFPath + File.separator + imagePDFName;// 获取图片存放的文件夹路径  
+            } else {  
+                imgFolderPath = dstImgFolder + File.separator + imagePDFName;  
+            }  
+  
+            if (createDirectory(imgFolderPath)) {  
+  
+                pdDocument = PDDocument.load(file);  
+                PDFRenderer renderer = new PDFRenderer(pdDocument);  
+                /* dpi越大转换后越清晰，相对转换速度越慢 */ 
+                
+                PDDocumentOutline outline = pdDocument.getDocumentCatalog().getDocumentOutline();
+                list.clear();
+                if(outline!=null && outline.hasChildren()){
+                	Iterator<PDOutlineItem> itor = outline.children().iterator();
+                	getPageAndTitle(itor,pdDocument);//获取目录和目录所在的页数
+                }else{
+                	System.out.println("该文件没有目录！");
+                }
+                int pages = pdDocument.getNumberOfPages();
+                StringBuffer imgFilePath = new StringBuffer();
+                for (int i = 0; i < pages; i++) {  
+                    String imgFilePathPrefix = imgFolderPath + File.separator;
+                    imgFilePath = new StringBuffer();  
+                   /* imgFilePath.append(imgFilePathPrefix);  
+                    imgFilePath.append("_");  
+                    imgFilePath.append(String.valueOf(i + 1));  */
+                    imgFilePath.append(imgFilePathPrefix);
+                    imgFilePath.append(autoGenericCode(i+1,8));
+                    imgFilePath.append(".jpg");  
+                    File dstFile = new File(imgFilePath.toString());  
+                    BufferedImage image = renderer.renderImageWithDPI(i, dpi);
+                    ImageIO.write(image, "jpg", dstFile);  
+                    System.out.println("生成第"+(i+1)+"页"+"------>"+imgFilePath.toString());
+                }
+                System.out.println("PDF文档转JPG图片成功！");  
+  
+            } else {  
+                System.out.println("PDF文档转JPG图片失败：" + "创建" + imgFolderPath + "失败");  
+            }  
+        } catch (IOException e) {  
+            e.printStackTrace();  
+        }
+    }  
+              
+    /*** 
+     * PDF文件转PNG图片，全部页数  dpi默认200
+     *  
+     * @param PdfFilePath pdf完整路径 
+     * @param imgFilePath 图片存放的文件夹 
+     * @return 
+     */  
+    public static void pdf2Image(String PdfFilePath, String dstImgFolder) {
+    	int dpi = 200;
+        File file = new File(PdfFilePath);  
+        PDDocument pdDocument;  
+        try {  
+            String imgPDFPath = file.getParent();  
+            int dot = file.getName().lastIndexOf('.');  
+            String imagePDFName = file.getName().substring(0, dot); // 获取图片文件名  
+            String imgFolderPath = "";  
+            if (dstImgFolder.equals("")) {  
+                imgFolderPath = imgPDFPath + File.separator + imagePDFName;// 获取图片存放的文件夹路径  
+            } else {  
+                imgFolderPath = dstImgFolder + File.separator + imagePDFName;  
+            }  
+  
+            if (createDirectory(imgFolderPath)) {  
+  
+                pdDocument = PDDocument.load(file);  
+                PDFRenderer renderer = new PDFRenderer(pdDocument);  
+                /* dpi越大转换后越清晰，相对转换速度越慢 */ 
+                
+                PDDocumentOutline outline = pdDocument.getDocumentCatalog().getDocumentOutline();
+                list.clear();
+                if(outline!=null && outline.hasChildren()){
+                	Iterator<PDOutlineItem> itor = outline.children().iterator();
+                	getPageAndTitle(itor,pdDocument);//获取目录和目录所在的页数
+                }else{
+                	System.out.println("该文件没有目录！");
+                }
+                int pages = pdDocument.getNumberOfPages();
+                StringBuffer imgFilePath = new StringBuffer();
+                for (int i = 0; i < pages; i++) {  
+                    String imgFilePathPrefix = imgFolderPath + File.separator;
+                    imgFilePath = new StringBuffer();  
+                    /*imgFilePath.append(imgFilePathPrefix);  
+                    imgFilePath.append("_");  
+                    imgFilePath.append(String.valueOf(i + 1));  */
+                    imgFilePath.append(imgFilePathPrefix);
+                    imgFilePath.append(autoGenericCode(i+1,8));
+                    imgFilePath.append(".jpg");  
+                    File dstFile = new File(imgFilePath.toString());  
+                    BufferedImage image = renderer.renderImageWithDPI(i, dpi);
+                    ImageIO.write(image, "jpg", dstFile);  
+                    System.out.println("生成第"+(i+1)+"页"+"------>"+imgFilePath.toString());
+                }
+                System.out.println("PDF文档转JPG图片成功！");  
+  
+            } else {  
+                System.out.println("PDF文档转JPG图片失败：" + "创建" + imgFolderPath + "失败");  
+            }  
+        } catch (IOException e) {  
+            e.printStackTrace();  
+        }
+    }  
+  
+    private static boolean createDirectory(String folder) {  
+        File dir = new File(folder);  
+        if (dir.exists()) {  
+            return true;  
+        } else {  
+            return dir.mkdirs();  
+        }  
+    }
+    /**
+     * 获取PDF文件的全部目录
+     * @param iterator
+     * @param pdDocument
+     * @return
+     * @throws IOException
+     */
+    public static void getPageAndTitle(Iterator<PDOutlineItem> iterator,PDDocument pdDocument) throws IOException{
+    	Map<String, String> map=null;
+    	int pages = pdDocument.getNumberOfPages();
+		while(iterator.hasNext()){
+			PDOutlineItem b = iterator.next();
+			PDPage pageB = b.findDestinationPage(pdDocument);
+        	for(int i=0;i<pages;i++){
+        		PDPage pd1 = pdDocument.getPage(i);
+        		if(pageB.equals(pd1)){
+        			map= new HashMap<String, String>();
+        			map.put("startPage", i+1+"");
+	    			map.put("title", b.getTitle());
+	    			list.add(map);
+        			//System.out.println(b.getTitle()+"=====>>"+(i+1));
+        			break;
+        		}
+        	}
+			if(b.hasChildren()){
+				Iterator<PDOutlineItem> iterator2 = b.children().iterator();
+				getPageAndTitle(iterator2,pdDocument);
+			}
+			
+		}
+		if(list!=null && list.size()>0){
+			for(int i=0;i<list.size();i++){
+				if(i+1<list.size()){
+					int a = Integer.parseInt(list.get(i).get("startPage"));
+					int b = Integer.parseInt(list.get(i+1).get("startPage"));
+					int endPage = a==b?b:b-1;
+					list.get(i).put("endPage", endPage+"");
+				}else{
+					list.get(i).put("endPage", pages+"");
+				}
+				
+			}
+		}		
+    }
+    
+    /**
+     * 保留num的位数 、0 代表前面补充0 、num 代表长度 、d 代表参数为正数型 
+     * @param code
+     * @param num
+     * @return
+     */
+    private static String autoGenericCode(int code, int num) {
+        String result = "";
+        result = String.format("%0" + num + "d", code);
+        return result;
+    }
+    
+    public static String listtoXml(List list) throws Exception {  
+        Document document = DocumentHelper.createDocument();  
+        Element nodesElement = document.addElement("nodes");  
+        int i = 0;  
+        for (Object o : list) {  
+            Element nodeElement = nodesElement.addElement("node");  
+            if (o instanceof Map) {  
+                for (Object obj : ((Map) o).keySet()) {  
+                    Element keyElement = nodeElement.addElement("key");  
+                    keyElement.addAttribute("label", String.valueOf(obj));  
+                    keyElement.setText(String.valueOf(((Map) o).get(obj)));  
+                }  
+            } else {  
+                Element keyElement = nodeElement.addElement("key");  
+                keyElement.addAttribute("label", String.valueOf(i));  
+                keyElement.setText(String.valueOf(o));  
+            }  
+            i++;  
+        }  
+        return doc2String(document);  
+    }
+    
+    /** 
+     *  
+     * @param document 
+     * @return 
+     */  
+    public static String doc2String(Document document) { 
+        String s = "";  
+        try {  
+            // 使用输出流来进行转化  
+            ByteArrayOutputStream out = new ByteArrayOutputStream();  
+            // 使用UTF-8编码  
+            OutputFormat format = new OutputFormat("", true, "UTF-8");  
+            XMLWriter writer = new XMLWriter(out, format);  
+            writer.write(document);  
+            s = out.toString("UTF-8");  
+        } catch (Exception ex) {  
+            ex.printStackTrace();  
+        }  
+        return s;  
+    }
+ 
+}
