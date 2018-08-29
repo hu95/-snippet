@@ -1,3 +1,7 @@
 1.三目运算：${true?string('5','7')}  
 2.时间：时间是否为空：${(intekeyCdate?datetime)!}  
         时间${intekeyUdate?string('yyyy-MM-dd HH:mm:ss')}
+3.boolean类型在js里面转Boolean
+        isKindLabel则为后台传过来的Boolean类型
+        var flag = Boolean(Number("<#if isKindLabel?? && isKindLabel>1<#else>0</#if>"));
+        或者用if标签
