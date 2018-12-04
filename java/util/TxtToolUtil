@@ -142,7 +142,7 @@ public class TxtToolUtil {
 	}
 
 	/**
-	 * 写入TXT，追加写入
+	 * 写入TXT，追加写入,追加文件
 	 * 
 	 * @param filePath
 	 * @param content
@@ -157,7 +157,48 @@ public class TxtToolUtil {
 			System.out.println("文件写入失败！" + e);
 		}
 	}
-
+/**
+	 * 追加文件：使用FileOutputStream，在构造FileOutputStream时，把第二个参数设为true
+	 * 
+	 * @param fileName
+	 * @param content
+	 */
+	public static void method1(String file, String conent) {
+		BufferedWriter out = null;
+		try {
+			out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true)));
+			out.newLine();
+			out.write(conent);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				out.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	/**
+	 * 追加文件：使用RandomAccessFile
+	 * 
+	 * @param fileName 文件名
+	 * @param content  追加的内容
+	 */
+	public static void method3(String fileName, String content) {
+		try {
+			// 打开一个随机访问文件流，按读写方式 
+			RandomAccessFile randomFile = new RandomAccessFile(fileName, "rw");
+			// 文件长度，字节数 
+			long fileLength = randomFile.length();
+			// 将写文件指针移到文件尾。 
+			randomFile.seek(fileLength);
+			randomFile.writeBytes(content);
+			randomFile.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 	
 	//文件重命名 (源文件，重命名地址)
 	public static boolean reNameTo(String filename,String targetName) {
