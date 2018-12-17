@@ -1,0 +1,16 @@
+#!/bin/bash
+#开始时间
+begin=$(date +%s)
+iparray=("180.7")
+
+#curl -H "Accept: application/json" -H "Content-type: application/json" -X POST -d  "{\"data\":\"/data8/load_data/big_v_relationship/180.76.250.100/$1\"}" http://192.168.2.33:8080/importData/deal
+length=${#iparray[@]}
+for ((i=0; i<length;i++))
+do                                                                                                   
+	curl -H "Accept: application/json" -H "Content-type: application/json" -X POST -d  "{\"data\":\"/data8/load_data/big_v_relationship/${iparray[$i]}/$1\"}" http://192.168.2.33:8080/importData/deal &
+done
+wait
+#结束时间
+end=$(date +%s)
+spend=$(expr $end - $begin)
+echo "花费时间为$spend秒
