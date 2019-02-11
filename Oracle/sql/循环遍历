@@ -1,3 +1,4 @@
+---- Oracle
 select *
   from core_organization t
  -- where t.unorg_type in ('1','10','3')
@@ -5,3 +6,23 @@ select *
 connect by prior t.crorg_uuid = t.crorg_parent_uuid
 
 start with （从何节点） connect by prior 开始至子节点/父节点
+
+
+----MySql
+CREATE DEFINER=`sjx`@`%` FUNCTION `getChildLst`(rootId INT) RETURNS varchar(1000) CHARSET utf8mb4
+BEGIN 
+       DECLARE sTemp VARCHAR(1000); 
+       DECLARE sTempChd VARCHAR(1000); 
+     
+       SET sTemp = '$'; 
+       SET sTempChd =cast(rootId as CHAR); 
+     
+       WHILE sTempChd is not null DO 
+         SET sTemp = concat(sTemp,',',sTempChd); 
+         //该列需要更该表名和字段名
+         SELECT group_concat(sonid) INTO sTempChd FROM topictree where FIND_IN_SET(fatherid,sTempChd)>0; 
+       END WHILE; 
+       RETURN sTemp; 
+     END
+
+select getChildLst(19557136); 
