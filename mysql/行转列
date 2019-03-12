@@ -1,0 +1,19 @@
+select    concat( "[", GROUP_CONCAT( official_fenlei ), "]," )
+ -- co 
+from (
+SELECT
+official_fenlei,
+	concat( "[", GROUP_CONCAT( pk_deal ), "]," ) co ,-- (official_company)
+	 count( official_fenlei ) c  
+FROM
+	LocalAndCareer_S
+	-- userdeal 
+-- WHERE
+	-- userdeal.userid = LocalAndCareer_S.userid
+GROUP BY
+	official_fenlei 
+ORDER BY
+	c DESC
+	) d
+
+ GROUP_CONCAT 有长度限制为1024个字节，需要语句对global和session进行设置；
