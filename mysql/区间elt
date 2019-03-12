@@ -1,0 +1,45 @@
+SELECT
+	elt(
+	INTERVAL ( userAttentionProblemsCount, 1, 6, 11, 101, 501, 1001,5001,10001 ),
+	'1-5',
+	'6-10',
+	'11-100',
+	'101-500',
+	'501-1000',
+'1001-5000',
+	'5001-10000',
+	'>10000' 
+	) AS `区间段`,
+	count( userid ) 总人数,
+	count( `user`.userAttentionTopicsCount ) 关注话题人数,
+	count( `user`.userAttentionColumnsCount ) 关注专栏人数,
+	count( `user`.userAttentionProblemsCount ) 关注问题人数,
+	count( `user`.userAnssCount ) 发布回答人数,
+	count( `user`.userAsksCount ) 提出问题人数,
+	count( `user`.userArticlesCount ) 发布文章人数,
+	count( `user`.userColumnsCount ) 创立专栏人数,
+	count( `user`.userFellowersCount ) 有粉丝人数,
+		count( `user`.userBEFellowersCount ) 关注用户人数,
+	AVG( `user`.userAttentionTopicsCount ) 关注话题平均数,
+	avg( `user`.userAttentionColumnsCount ) 关注专栏平均数,
+	avg( `user`.userAttentionProblemsCount ) 关注问题平均数,
+	avg( `user`.userAnssCount ) 发布回答平均数,
+	avg( `user`.userAsksCount )提出问题平均数,
+	avg( `user`.userArticlesCount )发布文章平均数,
+	avg( `user`.userColumnsCount ) 创立专栏平均数,
+	avg( `user`.userFellowersCount )  有粉丝平均数 ,
+	avg( `user`.userBEFellowersCount )  关注用户平均数 
+FROM
+user 
+GROUP BY
+	elt(
+	INTERVAL ( userAttentionProblemsCount, 1, 6, 11, 101, 501,  1001,5001,10001  ),
+	'1-5',
+	'6-10',
+	'11-100',
+	'101-500',
+	'501-1000',
+	'1001-5000',
+	'5001-10000',
+	'>10000'  
+	);
