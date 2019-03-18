@@ -1,0 +1,5 @@
+LineNumberReader继承自BufferedReader，并且增加了下面两个功能：
+
+获取行号：getLineNumber()
+设置行号：setLineNumber()
+不过，setLineNumber()能改变行号，却不能改变读的位置。
