@@ -1,0 +1,49 @@
+1. 创建数据库
+create database weibo;
+2. 使用数据库
+use weibo;
+3. 查看当前数据库 
+select current_database();
+4. 创建数据表
+create table user(id int, name string, gender string, age int) row format delimited fields terminated by ",";
+5. load 数据
+load data local inpath "/data6/weibo/user.csv" into table user;
+6. 查看表结构
+desc user;
+desc extended user;
+desc formatted user;
+7.更改表结构
+ALTER TABLE topic_contributor REPLACE COLUMNS (
+uid bigint comment '用户ID'
+, title_sub string comment '话题ID'
+, contribution int comment '贡献度'
+);
+
+
+Hive 
+缺点:
+1. Hive 不支持记录级别的增删改操作，但是用户可以通过查询生成新表或者将查询结 果导入到文件中.
+2. Hive 的查询延时很严重,因为 MapReduce Job 的启动过程消耗很长时间，所以不能 用在交互查询系统中.
+3.  Hive 不支持事务。
+
+中文注释：使用中文注释之前会有问题，建议更改语句 之后再弄
+Hive字段中文乱码，如执行 show create table xxx 时，表级别注释、字段级别注释发现有乱码现象， 一般都是由hive 元数据库的配置不当造成的。 
+
+此时可按如下步骤进行配置调整：
+登录hive的元数据库mysql中：（不是在hive sql 环境下执行）
+
+1、设置hive 元数据库字符集
+show create database hive;
+查看为utf8，需变更为latin1
+alter database hive character set latin1;  （可参阅）
+
+2、更改如下表字段为字符集编码为 utf8
+alter table COLUMNS_V2 modify column COMMENT varchar(256) character set utf8;
+alter table TABLE_PARAMS modify column PARAM_VALUE varchar(4000) character set utf8;
+alter table PARTITION_PARAMS  modify column PARAM_VALUE varchar(4000) character set utf8;
+alter table PARTITION_KEYS  modify column PKEY_COMMENT varchar(4000) character set utf8;
+alter table  INDEX_PARAMS  modify column PARAM_VALUE  varchar(4000) character set utf8;
+
+可以看到，如下语句分别对可能出现中文的字段、表参数、分区设置、及索引参数等字段，调整了字符集编码。
+
+
