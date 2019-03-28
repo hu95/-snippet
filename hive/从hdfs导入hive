@@ -1,0 +1,2 @@
+create external table bigV_publish_mblog(mid string,bid string,uid string)      
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ','  STORED AS TEXTFILE location '/user/clhadoop/weibo/bv_log_deal/';
