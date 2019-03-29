@@ -1,0 +1,169 @@
+package com.yonyou.splice;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.select.Select;
+import net.sf.jsqlparser.util.TablesNamesFinder;
+
+public class sql_prase_more {
+	// 获取sql语句中的所有表名
+	// 可以获取任意类型sql语句的全部表名，这里使用的select sql
+	// **********传入String 得到List<String>,嵌套已测试
+	public static List<String> test_select_table(String sql) throws JSQLParserException {
+		Statement statement = (Statement) CCJSqlParserUtil.parse(sql);
+		Select selectStatement = (Select) statement;
+		TablesNamesFinder tablesNamesFinder = new TablesNamesFinder();
+		List<String> tableList = tablesNamesFinder.getTableList(selectStatement);
+		return tableList;
+	}
+
+	// 验证sql语法正确性，返回错误信息
+	// 传入 String sql
+	// ***********返回错误信息such as： “错误单词” “line 1” “column 80”
+	public static String judge_type(String sql) {
+
+		try {
+			Statement statement = (Statement) CCJSqlParserUtil.parse(sql);
+		} catch (JSQLParserException e) {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			e.printStackTrace(new PrintStream(baos));
+			String exception = baos.toString();
+			String regEx = "Encountered(.*)";
+			Pattern pat = Pattern.compile(regEx);
+			Matcher mat = pat.matcher(exception);
+			while (mat.find()) {
+				exception = mat.group(1);
+			}
+			// System.out.println(exception);
+			String line = "";
+			String regEx2 = "line (.*),";
+			pat = Pattern.compile(regEx2);
+			mat = pat.matcher(exception);
+			while (mat.find()) {
+				line = mat.group(1);
+			}
+			// System.out.println(line);
+
+			int line_num = Integer.valueOf(line).intValue();
+			int indexofcolumn = exception.indexOf("column");
+			String errornumber = exception.substring(indexofcolumn + 7, exception.length() - 1);
+			int error_num = Integer.valueOf(errornumber).intValue();
+			System.out.println(error_num);
+
+			String ERROR_location = "";
+			if (error_num != 1) {
+				String sql_sub = sql.substring(0, error_num - 2); // 发生错误位置前面的字符串
+				// 错误信息单词往往处于错误位置的前一个地方单词
+				// 获取错误位置两个前面两个空格之间的单词，并保存
+				sql_sub = new StringBuilder(sql_sub).reverse().toString();
+				int indexofspace = sql_sub.indexOf(" ");
+				String sql_error = sql_sub.substring(0, indexofspace);
+				sql_error = new StringBuilder(sql_error).reverse().toString();
+				ERROR_location = "\"" + sql_error + "\"" + " at line " + line_num + " at column " + error_num;
+			} else {
+				int indexofspace = sql.indexOf(" ");
+				String sql_error = sql.substring(0, indexofspace);
+				ERROR_location = "\"" + sql_error + "\"" + " at line " + line_num + " at column " + error_num;
+			}
+			return ERROR_location; // 错误信息的返回
+		}
+		String result = "correct";
+		return result; // Jsql可以解析，返回correct
+
+	}
+
+	// insert时获取所有values(批量插入情况) insert table1(c1,c2)
+	// values(v1,v2),(v11,v22),(v111,v222)
+	public static List<List<String>> insert_values(String sql) throws JSQLParserException {
+		Statement statement = CCJSqlParserUtil.parse(sql);
+		String exception = statement.toString();
+		System.out.println(exception);
+		List<List<String>> str_values = new ArrayList<List<String>>();
+		String regEx1 = "VALUES(.*)|ON DUPLICATE KEY UPDATE$";
+		Pattern pat = Pattern.compile(regEx1);
+		Matcher mat = pat.matcher(exception);
+		while (mat.find()) {
+			exception = mat.group(1).toString();
+		}
+		String regEx2 = "(?<=\\().*?(?=\\))";
+		pat = Pattern.compile(regEx2);
+		mat = pat.matcher(exception);
+		while (mat.find()) {
+			exception = mat.group(0).toString();
+			List<String> str_list = new ArrayList<String>();
+			// System.out.println(exception);
+			String str = "";
+			// 将Values 每一个括号内部的string 按照 ，分割开来。并加入到List<String>
+			for (int i = 0, j = 0; j < exception.length() - 1; j++) {
+				if (exception.charAt(j) == ',') {
+					str = exception.substring(i, j);
+					// System.out.println(str);
+					i = j + 1;
+					str_list.add(str);
+				}
+				if (j == exception.length() - 2) {
+					str = exception.substring(i, j + 2);
+					// System.out.println(str);
+					str_list.add(str);
+				}
+			}
+			// List<List<Stirng>>.add
+			str_values.add(str_list);
+		}
+		return str_values;
+
+	}
+
+	// 组装insert
+	// 批量Values的组装, //参数：要修改的sql语句，已经得到的新的List<List<Stirng>>
+	// 将原来的Values替换为新参数
+	public static String build_insert_values(String sql, List<List<String>> str_values) throws JSQLParserException {
+		// 这里相当于 字符串转化大写 与 单空格间隔 的格式化,方便后面替换
+		Statement statement = CCJSqlParserUtil.parse(sql);
+		String exception = statement.toString();
+
+		String exception_delete = "";
+		String replacement = "";
+		String regEx = "VALUES(.*)";
+		Pattern pat = Pattern.compile(regEx);
+		Matcher mat = pat.matcher(exception);
+		while (mat.find()) {
+			exception_delete = mat.group(1).toString();
+		}
+		boolean start_out = true;
+		// 为二维string添加 逗号和括号
+		for (int i = 0; i < str_values.size(); i++) {
+			boolean start_in = true;
+			String brackets = "";
+			for (int j = 0; j < str_values.get(i).size(); j++) {
+				if (start_in == true) {
+					brackets += str_values.get(i).get(j);
+					// System.out.println(brackets);
+					start_in = false;
+				} else
+					brackets += "," + str_values.get(i).get(j);
+			}
+			brackets = "(" + brackets + ")";
+			if (start_out == true) {
+				replacement = brackets;
+				start_out = false;
+			} else
+				replacement += "," + brackets;
+		}
+		// 最后加上分号
+		replacement += ";";
+		// System.out.println(replacement);
+		exception = exception.replace(exception_delete, replacement);
+		sql = exception;
+		return sql;
+	}
+
+}
