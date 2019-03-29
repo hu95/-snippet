@@ -1,0 +1,16 @@
+package com.yonyou.splice;
+
+import java.util.List;
+
+import net.sf.jsqlparser.JSQLParserException;
+
+public class prase_test {
+	public static void main(String[] args) throws Exception {
+		String sql ="INSERT INTO `weibo`.`hot`(`id`, `uid`, `mid`, `comments_count`, `reposts_count`, `attitudes_count`, `example_kind`, `source`, `bid`, `create_at`, `time_day`, `time_stamp`) VALUES ('00000a54388137f9102bf338adc79af5', 1787094780, '4348716250890218', 21, 148, 86, '健康', '微博视频', 'HkrkB3JAm', '2019-03-11', '2019-03-13', 1552475302);";
+		//List<String> result = Prasing_Test.test_insert_column(sql);
+		sql = "insert into weibo values (1,2),(3,4)";
+		sql="INSERT INTO `big_V_mblog_20181212` VALUES ('4188982093285054','放弃了对mini的执念，决定还是买个经济实用的好 西安 · 万寿路','','iPhone客户端','放弃了对mini的执念，决定还是买个...',70,'FBkPvdMAK','2017-12-25 23:10:21',1949245933,'0','10','0',0,'',NULL,'',1544603327),('4188983233956836','#圣诞季# 今天在酒店还遇到一个和我穿同款羽绒服的小宝宝，太可爱了','','','#圣诞季# 今天在酒店还遇到一个和...',81,'FBkRlgBlW','2017-12-25 23:14:53',1140651774,'0','5','21',0,'','https://wx1.sinaimg.cn/orj360/43fcf6fely1fmtf6un3zmj20ku0rsq67.jpg','',1544608138);";
+		List<List<String>> result = Prasing_Test.test_insert_multi_values(sql);
+		System.out.println(result);
+	}
+}
